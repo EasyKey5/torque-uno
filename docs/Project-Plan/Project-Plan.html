@@ -1,0 +1,1363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-10-15 Thu 12:45 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Torque-Uno Requirements &#x2014; working register</title>
+<meta name="author" content="Tama Harrison Tama Harrison" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Torque-Uno Requirements &#x2014; working register</h1>
+<div id="table-of-contents-1" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents-1" role="doc-toc">
+<ul>
+<li><a href="#org9180519">1. Tables of contents, figures, etc.</a></li>
+<li><a href="#orga0b6b75">2. Project scope</a></li>
+<li><a href="#org204127e">3. Project objectives</a></li>
+<li><a href="#org4d108fb">4. Project Requirements</a>
+<ul>
+<li><a href="#org1248efa">4.1. Attitude control</a></li>
+<li><a href="#orgd6b3b63">4.2. Physical</a></li>
+<li><a href="#orgf724b69">4.3. Power</a></li>
+<li><a href="#orgc48acba">4.4. Thermal</a></li>
+<li><a href="#orgb75de9c">4.5. Electronics</a></li>
+<li><a href="#org6c57c6b">4.6. Safety</a></li>
+<li><a href="#orgb4ad58e">4.7. Simulation</a></li>
+<li><a href="#org24d9365">4.8. Further objectives</a></li>
+</ul>
+</li>
+<li><a href="#org7160ed2">5. Work packages</a></li>
+<li><a href="#org56fe91b">6. Skills and Resource Audit</a>
+<ul>
+<li><a href="#org43f4ad7">6.1. Skills Audit:</a></li>
+<li><a href="#org1318654">6.2. Resource Audit:</a></li>
+</ul>
+</li>
+<li><a href="#org27f667b">7. Appendix 1. A Gantt chart (1 Page)</a></li>
+<li><a href="#orgd5ebec9">8. Appendix 2. The risk assessment form.</a></li>
+<li><a href="#org1d4ae6e">9. Appendix 3. FYP ethics self-assessment.</a></li>
+</ul>
+</div>
+</div>
+<p>
+<span class="underline">Declaration of academic integrity</span>
+</p>
+
+<p>
+By submitting this work, I confirm that I have read and understood the University&rsquo;s Academic Integrity Policy.
+</p>
+
+<p>
+By submitting this work, I confirm that I have acted honestly, ethically and professionally in conduct leading to assessment for the programme of study.
+</p>
+
+<p>
+By submitting this work, I confirm that the work I am submitting is my own. I have not commissioned production of the work from a third party or used artificial intelligence software in an unacceptable manner to generate the work*. I have not copied material from another person or source, nor committed plagiarism, nor fabricated, falsified or embellished data when completing the attached piece of work. I have not colluded with any other student in the preparation and/ or production of this work.
+</p>
+
+<p>
+<i>*Software applications include but are not limited to, ChatGPT, Bing Chat, DALL.E, Bard</i>
+</p>
+
+<hr />
+<div id="outline-container-org9180519" class="outline-2">
+<h2 id="org9180519"><span class="section-number-2">1.</span> Tables of contents, figures, etc.</h2>
+<div class="outline-text-2" id="text-1">
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org9180519">1. Tables of contents, figures, etc.</a></li>
+<li><a href="#orga0b6b75">2. Project scope</a></li>
+<li><a href="#org204127e">3. Project objectives</a></li>
+<li><a href="#org4d108fb">4. Project Requirements</a>
+<ul>
+<li><a href="#org1248efa">4.1. Attitude control</a></li>
+<li><a href="#orgd6b3b63">4.2. Physical</a></li>
+<li><a href="#orgf724b69">4.3. Power</a></li>
+<li><a href="#orgc48acba">4.4. Thermal</a></li>
+<li><a href="#orgb75de9c">4.5. Electronics</a></li>
+<li><a href="#org6c57c6b">4.6. Safety</a></li>
+<li><a href="#orgb4ad58e">4.7. Simulation</a></li>
+<li><a href="#org24d9365">4.8. Further objectives</a></li>
+</ul>
+</li>
+<li><a href="#org7160ed2">5. Work packages</a></li>
+<li><a href="#org56fe91b">6. Skills and Resource Audit</a>
+<ul>
+<li><a href="#org43f4ad7">6.1. Skills Audit:</a></li>
+<li><a href="#org1318654">6.2. Resource Audit:</a></li>
+</ul>
+</li>
+<li><a href="#org27f667b">7. Appendix 1. A Gantt chart (1 Page)</a></li>
+<li><a href="#orgd5ebec9">8. Appendix 2. The risk assessment form.</a></li>
+<li><a href="#org1d4ae6e">9. Appendix 3. FYP ethics self-assessment.</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orga0b6b75" class="outline-2">
+<h2 id="orga0b6b75"><span class="section-number-2">2.</span> Project scope</h2>
+</div>
+
+
+
+<div id="outline-container-org204127e" class="outline-2">
+<h2 id="org204127e"><span class="section-number-2">3.</span> Project objectives</h2>
+</div>
+
+
+
+<div id="outline-container-org4d108fb" class="outline-2">
+<h2 id="org4d108fb"><span class="section-number-2">4.</span> Project Requirements</h2>
+<div class="outline-text-2" id="text-4">
+</div>
+<div id="outline-container-org1248efa" class="outline-3">
+<h3 id="org1248efa"><span class="section-number-3">4.1.</span> Attitude control</h3>
+<div class="outline-text-3" id="text-4-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">CTR-01</td>
+<td class="org-left">Hold commanded attitude about the vertical axis</td>
+<td class="org-left">±1° for 60 s; report true drift rate over 10 min</td>
+<td class="org-left">Overhead camera + printed protractor ring</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-02</td>
+<td class="org-left">Rotate through a commanded 90° step</td>
+<td class="org-left">&lt; 5 s to within ±1°</td>
+<td class="org-left">Overhead camera; gyro log</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-03</td>
+<td class="org-left">Overshoot on 90° slew</td>
+<td class="org-left">&lt; 10 %</td>
+<td class="org-left">Overhead camera; gyro log</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-04</td>
+<td class="org-left">Recover from a hand-imparted disturbance</td>
+<td class="org-left">20–40 °/s (gyro-measured); within ±1° in &lt; 3 s</td>
+<td class="org-left">Gyro log for imparted rate; camera for recovery</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-05</td>
+<td class="org-left">Baseline controller</td>
+<td class="org-left">PID</td>
+<td class="org-left">Demonstration</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-06</td>
+<td class="org-left">Attitude sensing</td>
+<td class="org-left">Onboard MEMS gyro only; full scale ≥ ±250 °/s; bias calibrated at rest</td>
+<td class="org-left">Design inspection; calibration log</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-07</td>
+<td class="org-left">Consecutive same-direction 90° slews, each meeting CTR-02</td>
+<td class="org-left">≥ 4</td>
+<td class="org-left">Overhead camera; gyro and wheel-speed log</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-08</td>
+<td class="org-left">Wheel saturation handling</td>
+<td class="org-left">At speed cap: torque limited, flag in telemetry, no runaway</td>
+<td class="org-left">Test (sustained disturbance to cap); telemetry log</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Settling time: time until the angle remains within ±1° of target.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd6b3b63" class="outline-3">
+<h3 id="orgd6b3b63"><span class="section-number-3">4.2.</span> Physical</h3>
+<div class="outline-text-3" id="text-4-2">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">PHY-01</td>
+<td class="org-left">Rotating body fits a 1U CubeSat envelope</td>
+<td class="org-left">10 × 10 × 10 cm</td>
+<td class="org-left">Measurement</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-02</td>
+<td class="org-left">Rotating body mass</td>
+<td class="org-left">≤ 1.33 kg (CubeSat spec limit); see budget</td>
+<td class="org-left">Weighing</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-03</td>
+<td class="org-left">Body supported on a single vertical axis</td>
+<td class="org-left">2 bearings, ground shaft; Aluminium housing</td>
+<td class="org-left">Design inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-04</td>
+<td class="org-left">Overall centre of mass offset from rotation axis</td>
+<td class="org-left">≤ 2 mm</td>
+<td class="org-left">CAD mass properties</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-05</td>
+<td class="org-left">Bearing friction torque about the vertical axis</td>
+<td class="org-left">≤ 3 mN·m</td>
+<td class="org-left">Spin-down test</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-06</td>
+<td class="org-left">Rotation axis vertical</td>
+<td class="org-left">Within 0.1°</td>
+<td class="org-left">Spirit level on hub top face</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgf724b69" class="outline-3">
+<h3 id="orgf724b69"><span class="section-number-3">4.3.</span> Power</h3>
+<div class="outline-text-3" id="text-4-3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">PWR-01</td>
+<td class="org-left">Average power while holding, no disturbance</td>
+<td class="org-left">≤ 2 W</td>
+<td class="org-left">Measured V × I logged on board</td>
+<td class="org-left">TBD (after motor selection)</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-02</td>
+<td class="org-left">Runtime on one charge</td>
+<td class="org-left">≥ 30 min</td>
+<td class="org-left">Timed test</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-03</td>
+<td class="org-left">Energy per 90° slew</td>
+<td class="org-left">Report measured value</td>
+<td class="org-left">Measured V × I integration</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-04</td>
+<td class="org-left">Onboard power source</td>
+<td class="org-left">Protected 18650 Li-ion Batteries, BMS</td>
+<td class="org-left">Design inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgc48acba" class="outline-3">
+<h3 id="orgc48acba"><span class="section-number-3">4.4.</span> Thermal</h3>
+<div class="outline-text-3" id="text-4-4">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">THM-01</td>
+<td class="org-left">Motor and driver IC temperature after 10 min repeated 90° slews</td>
+<td class="org-left">≤ 60 °C</td>
+<td class="org-left">IR thermometer</td>
+<td class="org-left">TBD (after motor selection)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgb75de9c" class="outline-3">
+<h3 id="orgb75de9c"><span class="section-number-3">4.5.</span> Electronics</h3>
+<div class="outline-text-3" id="text-4-5">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">ELE-01</td>
+<td class="org-left">Microcontroller</td>
+<td class="org-left">ESP32-S3 module on custom PCB</td>
+<td class="org-left">Design inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-02</td>
+<td class="org-left">Motor driver</td>
+<td class="org-left">BLDC, own driver on PCB, magnetic encoder on motor</td>
+<td class="org-left">Design inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-03</td>
+<td class="org-left">Main PCB</td>
+<td class="org-left">All-in-one, 2-layer</td>
+<td class="org-left">Design inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-04</td>
+<td class="org-left">Wireless command and telemetry to laptop</td>
+<td class="org-left">BLE; telemetry ≥ 50 Hz: angle, rate, wheel speed, bus V, I</td>
+<td class="org-left">Demonstration; logged sample times</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-05</td>
+<td class="org-left">Onboard power measurement</td>
+<td class="org-left">Battery bus voltage and current sensed on PCB</td>
+<td class="org-left">Design inspection; check vs bench meter</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org6c57c6b" class="outline-3">
+<h3 id="org6c57c6b"><span class="section-number-3">4.6.</span> Safety</h3>
+<div class="outline-text-3" id="text-4-6">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">SFT-01</td>
+<td class="org-left">Stop command from laptop disables motor</td>
+<td class="org-left">Single key/button</td>
+<td class="org-left">Test before first battery spin</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-02</td>
+<td class="org-left">Motor disabled on loss of laptop heartbeat</td>
+<td class="org-left">&gt; 0.5 s</td>
+<td class="org-left">Test before first battery spin</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-03</td>
+<td class="org-left">Latching power-isolation switch</td>
+<td class="org-left">Top face of body; isolates battery from all loads</td>
+<td class="org-left">Test</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-04</td>
+<td class="org-left">Flywheel speed hard limit in firmware</td>
+<td class="org-left">≤ 600 rpm</td>
+<td class="org-left">Test</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-05</td>
+<td class="org-left">Flywheel enclosed</td>
+<td class="org-left">Aluminium enclosure; no acrylic or polycarbonate</td>
+<td class="org-left">Inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-06</td>
+<td class="org-left">Flywheel material</td>
+<td class="org-left">Aluminium or brass</td>
+<td class="org-left">Inspection</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-07</td>
+<td class="org-left">Battery pack protection</td>
+<td class="org-left">Fuse at pack terminals; firmware low-voltage cut-off</td>
+<td class="org-left">Inspection; bench-PSU test</td>
+<td class="org-left">TBD (fuse sized from measured peak current)</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-08</td>
+<td class="org-left">Motor arming and current limit</td>
+<td class="org-left">Motor enabled only after arm command; firmware motor current limit</td>
+<td class="org-left">Test</td>
+<td class="org-left">Agreed</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-09</td>
+<td class="org-left">PCB input protection</td>
+<td class="org-left">Reverse-polarity protection; input fuse; regen over-voltage clamp</td>
+<td class="org-left">Design inspection; bench test</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgb4ad58e" class="outline-3">
+<h3 id="orgb4ad58e"><span class="section-number-3">4.7.</span> Simulation</h3>
+<div class="outline-text-3" id="text-4-7">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Requirement</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Verification</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">SIM-01</td>
+<td class="org-left">MATLAB model shows CTR-01..04 met before hardware build</td>
+<td class="org-left">Deliverable</td>
+<td class="org-left">sim/results/requirements.md</td>
+<td class="org-left">Agreed</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org24d9365" class="outline-3">
+<h3 id="org24d9365"><span class="section-number-3">4.8.</span> Further objectives</h3>
+<div class="outline-text-3" id="text-4-8">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Objective</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">STR-01</td>
+<td class="org-left">LQR controller compared against PID</td>
+<td class="org-left">Stretch</td>
+</tr>
+
+<tr>
+<td class="org-left">STR-02</td>
+<td class="org-left">Magnetorquer momentum-dumping modelled in MATLAB</td>
+<td class="org-left">Stretch</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Attitude control
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">CTR-01</td>
+<td class="org-left">Hold the commanded attitude about the vertical axis to within ±1° for 60 s, and report the true drift rate over 10 min.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-02</td>
+<td class="org-left">Rotate through a commanded 90° step, settling to within ±1° in under 5 s.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-03</td>
+<td class="org-left">Overshoot on a 90° slew below 10 %.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-04</td>
+<td class="org-left">Recover from a hand-imparted disturbance of 20–40 °/s (gyro-measured) to within ±1° in under 3 s.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-05</td>
+<td class="org-left">Use a PID controller as the baseline controller.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-06</td>
+<td class="org-left">Determine attitude from an onboard MEMS gyro only, with a full scale of at least ±250 °/s and bias calibrated at rest.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-07</td>
+<td class="org-left">Complete at least 4 consecutive same-direction 90° slews, each meeting CTR-02.</td>
+</tr>
+
+<tr>
+<td class="org-left">CTR-08</td>
+<td class="org-left">At the wheel speed cap, limit wheel torque and flag saturation in telemetry, with no runaway.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Settling time is the time until the angle remains within ±1° of the target.
+</p>
+
+<p>
+<b>Category:</b> Physical
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">PHY-01</td>
+<td class="org-left">The rotating body fits a 1U CubeSat envelope (10 × 10 × 10 cm).</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-02</td>
+<td class="org-left">Rotating body mass ≤ 1.33 kg (CubeSat specification limit), allocated in a mass budget.</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-03</td>
+<td class="org-left">The body is supported on a single vertical axis: two bearings on a ground shaft, in an aluminium housing.</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-04</td>
+<td class="org-left">The overall centre of mass is within 2 mm of the rotation axis (CAD mass properties).</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-05</td>
+<td class="org-left">Bearing friction torque about the vertical axis ≤ 3 mN·m (spin-down test).</td>
+</tr>
+
+<tr>
+<td class="org-left">PHY-06</td>
+<td class="org-left">The rotation axis is vertical to within 0.1°.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Power
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">PWR-01</td>
+<td class="org-left">Average power ≤ 2 W while holding attitude with no disturbance (value confirmed after motor selection).</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-02</td>
+<td class="org-left">Runtime of at least 30 min on one charge.</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-03</td>
+<td class="org-left">Measure and report the energy used per 90° slew.</td>
+</tr>
+
+<tr>
+<td class="org-left">PWR-04</td>
+<td class="org-left">Onboard power from protected 18650 Li-ion batteries with a BMS.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Thermal
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">THM-01</td>
+<td class="org-left">Motor and driver IC temperature ≤ 60 °C after 10 min of repeated 90° slews (value confirmed after motor selection).</td>
+</tr>
+
+<tr>
+<td class="org-left">THM-02</td>
+<td class="org-left">Analyse the THM-01 temperatures with no convection (as in vacuum), including mitigations.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Electronics and communications
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">ELE-01</td>
+<td class="org-left">An ESP32-S3 module on a custom PCB as the microcontroller.</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-02</td>
+<td class="org-left">A BLDC motor driven by a driver on the PCB, with a magnetic encoder on the motor.</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-03</td>
+<td class="org-left">An all-in-one, 2-layer main PCB.</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-04</td>
+<td class="org-left">Wireless command and telemetry to a laptop over BLE, with telemetry of angle, rate, wheel speed, bus voltage and current at ≥ 50 Hz.</td>
+</tr>
+
+<tr>
+<td class="org-left">ELE-05</td>
+<td class="org-left">Battery bus voltage and current sensed on the PCB.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Safety (from the risk assessment)
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">SFT-01</td>
+<td class="org-left">A single key or button on the laptop sends a stop command that disables the motor.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-02</td>
+<td class="org-left">The motor is disabled if the laptop heartbeat is lost for more than 0.5 s.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-03</td>
+<td class="org-left">A latching power-isolation switch on the top face of the body isolates the battery from all loads.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-04</td>
+<td class="org-left">A firmware hard limit on flywheel speed of ≤ 600 rpm.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-05</td>
+<td class="org-left">The flywheel is enclosed in an aluminium enclosure (no acrylic or polycarbonate).</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-06</td>
+<td class="org-left">The flywheel is made of aluminium or brass.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-07</td>
+<td class="org-left">A fuse at the battery pack terminals (rating set from measured peak current) and a firmware low-voltage cut-off.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-08</td>
+<td class="org-left">The motor is enabled only after an arm command, with a firmware motor current limit.</td>
+</tr>
+
+<tr>
+<td class="org-left">SFT-09</td>
+<td class="org-left">Reverse-polarity protection, an input fuse and a regenerative over-voltage clamp on the PCB.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Simulation
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">SIM-01</td>
+<td class="org-left">The MATLAB model shows CTR-01 to CTR-04 are met before the hardware is built.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Category:</b> Further objectives (stretch, not required for success)
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Identifier</b></th>
+<th scope="col" class="org-left"><b>Description</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">STR-01</td>
+<td class="org-left">An LQR controller compared against the PID controller.</td>
+</tr>
+
+<tr>
+<td class="org-left">STR-02</td>
+<td class="org-left">System identification of the rig, with a comparison of simulation against hardware.</td>
+</tr>
+
+<tr>
+<td class="org-left">STR-03</td>
+<td class="org-left">Magnetorquer momentum dumping modelled in MATLAB alongside the wheel.</td>
+</tr>
+
+<tr>
+<td class="org-left">STR-04</td>
+<td class="org-left">A PCB-trace magnetorquer prototype, with its dipole moment measured and fed back into the model.</td>
+</tr>
+
+<tr>
+<td class="org-left">STR-05</td>
+<td class="org-left">A multi-axis (2–3 wheel) extension, from the original brief (future work).</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+</div>
+</div>
+</div>
+<div id="outline-container-org7160ed2" class="outline-2">
+<h2 id="org7160ed2"><span class="section-number-2">5.</span> Work packages</h2>
+<div class="outline-text-2" id="text-5">
+<hr />
+<div class="workpackage" id="org35b9a60">
+<dl class="org-dl">
+<dt>WP Title</dt><dd>Flywheel Simulation</dd>
+<dt>WP number</dt><dd>1</dd>
+<dt>Start Event</dt><dd>Project Plan Complete</dd>
+<dt>Duration</dt><dd>1 Week</dd>
+<dt>Objectives</dt><dd>Simulate the control of a BLDC Motor which generates torque such that a body can be rotated within the requirements outlined in <a href="#org4d108fb">4</a></dd>
+<dt>Task Description</dt><dd>Create a MATLAB Simulink Model of a BLDC motor with a controller that can rotate&#x2026;.</dd>
+<dt>Inputs</dt><dd>N/A</dd>
+<dt>Interfaces/links with other tasks or WPs</dt><dd>Decides size of the flywheel required</dd>
+<dt>Deliverables</dt><dd>Simulation within requirements</dd>
+</dl>
+
+</div>
+</div>
+</div>
+<div id="outline-container-org56fe91b" class="outline-2">
+<h2 id="org56fe91b"><span class="section-number-2">6.</span> Skills and Resource Audit</h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-org43f4ad7" class="outline-3">
+<h3 id="org43f4ad7"><span class="section-number-3">6.1.</span> Skills Audit:</h3>
+<div class="outline-text-3" id="text-6-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Skill</b></th>
+<th scope="col" class="org-left"><b>Level</b></th>
+<th scope="col" class="org-left"><b>Training needs</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org1318654" class="outline-3">
+<h3 id="org1318654"><span class="section-number-3">6.2.</span> Resource Audit:</h3>
+<div class="outline-text-3" id="text-6-2">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><b>Resource</b></th>
+<th scope="col" class="org-left"><b>Availability</b></th>
+<th scope="col" class="org-left"><b>Alternatives</b></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+</div>
+</div>
+</div>
+<div id="outline-container-org27f667b" class="outline-2">
+<h2 id="org27f667b"><span class="section-number-2">7.</span> Appendix 1. A Gantt chart (1 Page)</h2>
+<div class="outline-text-2" id="text-7">
+<hr />
+</div>
+</div>
+<div id="outline-container-orgd5ebec9" class="outline-2">
+<h2 id="orgd5ebec9"><span class="section-number-2">8.</span> Appendix 2. The risk assessment form.</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+<a href="./risk-assessment-2026-10-13.pdf">./risk-assessment-2026-10-13.pdf</a>
+</p>
+
+<hr />
+</div>
+</div>
+<div id="outline-container-org1d4ae6e" class="outline-2">
+<h2 id="org1d4ae6e"><span class="section-number-2">9.</span> Appendix 3. FYP ethics self-assessment.</h2>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Tama Harrison Tama Harrison</p>
+<p class="date">Created: 2026-10-15 Thu 12:45</p>
+</div>
+</body>
+</html>

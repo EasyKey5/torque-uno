@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-10-05 Mon 10:10 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Risk Assessment &#x2014; working draft (v0.3, 2026-10-04)</title>
+<meta name="author" content="Tama Harrison" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Risk Assessment &#x2014; working draft (v0.3, 2026-10-04)</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org260eed0">1. Form fields</a>
+<ul>
+<li><a href="#org1daaa92">1.1. Project description &#x2014; facts to write into ≥4 sentences (your words)</a></li>
+<li><a href="#org9ef0f7f">1.2. Training table (fill in dates)</a></li>
+</ul>
+</li>
+<li><a href="#org658402c">2. Hazards and controls</a></li>
+<li><a href="#org95c133f">3. Additional notes for the form</a></li>
+<li><a href="#org7b01a88">4. Open items before submission</a></li>
+</ul>
+</div>
+</div>
+<p>
+Working material for the ORA entry (<a href="https://www.csc.liv.ac.uk/has/ora">https://www.csc.liv.ac.uk/has/ora</a> → &ldquo;Create New
+Undergraduate Project Risk Assessment&rdquo;). Re-word into the form yourself; scores and controls are the
+substance to carry across.
+</p>
+<div id="outline-container-org260eed0" class="outline-2">
+<h2 id="org260eed0"><span class="section-number-2">1.</span> Form fields</h2>
+<div class="outline-text-2" id="text-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Field</th>
+<th scope="col" class="org-left">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Assessor</td>
+<td class="org-left">Tama Harrison (sgtharr5)</td>
+</tr>
+
+<tr>
+<td class="org-left">Supervisor</td>
+<td class="org-left">Dr Kai Hoettges</td>
+</tr>
+
+<tr>
+<td class="org-left">Year of study</td>
+<td class="org-left">3 (ELEC340)</td>
+</tr>
+
+<tr>
+<td class="org-left">Location</td>
+<td class="org-left">EEE 4th-floor project laboratory &#x2014; <b>room ref: TODO</b></td>
+</tr>
+
+<tr>
+<td class="org-left">Category</td>
+<td class="org-left">1 (hardware/robotics, lab-only)</td>
+</tr>
+
+<tr>
+<td class="org-left">Max voltage (project circuits)</td>
+<td class="org-left">12.6 V DC (3S Li-ion fully charged; bench PSU set to 12 V)</td>
+</tr>
+
+<tr>
+<td class="org-left">Max current (project circuits)</td>
+<td class="org-left">5 A (battery output fuse); bench PSU limited to ≤3 A</td>
+</tr>
+
+<tr>
+<td class="org-left">Persons affected</td>
+<td class="org-left">Assessor; other students at adjacent benches; technicians/supervisor</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="outline-container-org1daaa92" class="outline-3">
+<h3 id="org1daaa92"><span class="section-number-3">1.1.</span> Project description &#x2014; facts to write into ≥4 sentences (your words)</h3>
+<div class="outline-text-3" id="text-1-1">
+<ul class="org-ul">
+<li>Single-axis reaction wheel attitude-control demonstrator for a CubeSat-style satellite.</li>
+<li>A ~1U (10 cm cube, ≤1.33 kg) body rotates about a vertical axis on a low-friction bearing mounted
+on a fixed base clamped to the bench.</li>
+<li>A BLDC motor spins a metal flywheel (≤6000 rpm firmware limit) to rotate the body; controlled by
+an ESP32-S3 module on a custom PCB with a field-oriented-control motor driver and a MEMS gyro.</li>
+<li>Powered on the rig by an onboard protected 3S Li-ion pack (BMS + fuse), placed to balance the
+body. New boards are first brought up on a current-limited 12 V bench PSU.</li>
+<li>Commands and telemetry between the ESP32 and a laptop over its built-in wireless (Bluetooth LE or
+Wi-Fi); motor disabled automatically if the link drops. Physical power-isolation switch on the
+body.</li>
+<li>Work: PCB assembly (hand soldering, SMD pick-and-place after training), bench testing, operating
+the rig. PCB fabrication, laser cutting and 3D printing are done by technicians via fabrication
+requests.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org9ef0f7f" class="outline-3">
+<h3 id="org9ef0f7f"><span class="section-number-3">1.2.</span> Training table (fill in dates)</h3>
+<div class="outline-text-3" id="text-1-2">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Training</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Yr3 H&amp;S / risk assessment lecture (29 Sep)</td>
+<td class="org-left">TODO: attended?</td>
+</tr>
+
+<tr>
+<td class="org-left">Lab induction, 4th-floor lab</td>
+<td class="org-left">TODO</td>
+</tr>
+
+<tr>
+<td class="org-left">Soldering (hand)</td>
+<td class="org-left">Prior experience (LASER) &#x2014; confirm with technicians</td>
+</tr>
+
+<tr>
+<td class="org-left">SMD manual pick-and-place / solder paste / reflow</td>
+<td class="org-left">To book on Canvas &#x2014; <b>must complete before use</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org658402c" class="outline-2">
+<h2 id="org658402c"><span class="section-number-2">2.</span> Hazards and controls</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+L = likelihood, C = consequence, R = L × C, all scored <b>with</b> the controls listed in place. Bands:
+1&#x2013;4 acceptable, 5&#x2013;9 adequate, 10&#x2013;16 tolerable (stop), 17&#x2013;25 unacceptable.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">No.</th>
+<th scope="col" class="org-left">Hazard</th>
+<th scope="col" class="org-left">Harm / who</th>
+<th scope="col" class="org-left">Controls</th>
+<th scope="col" class="org-right">L</th>
+<th scope="col" class="org-right">C</th>
+<th scope="col" class="org-right">R</th>
+<th scope="col" class="org-left">Add&rsquo;l?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left"><b>Flywheel burst / fragment ejection</b></td>
+<td class="org-left">Eye or penetrating injury to user and bystanders from parts released at speed (wheel stores up to ~20 J at max speed)</td>
+<td class="org-left">Wheel machined from aluminium/brass &#x2014; never 3D-printed or glued. Speed hard-limited in firmware (≤6000 rpm) and below motor rating. Wheel fully enclosed in a polycarbonate (or metal) shroud before any spin above a low test speed; <b>acrylic not used as a guard</b>. Wheel balanced and fasteners thread-locked; inspected for cracks/looseness before each session. Safety glasses during spin tests. Rig kept to the back of the bench, nobody in line with the wheel plane.</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left"><b>Entanglement / contact with rotating parts</b></td>
+<td class="org-left">Hair, sleeves, fingers caught by wheel or rotating body; cuts, bruising</td>
+<td class="org-left">Shroud over wheel. Long hair tied back, no loose sleeves/lanyards. Hands clear of rotating body whenever the system is armed. Wireless stop ready before arming (see #3).</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left"><b>Unexpected start-up / runaway</b></td>
+<td class="org-left">Firmware fault or unstable controller drives wheel to max speed or whips the body; impact injury, damage, knocks items off bench</td>
+<td class="org-left">Three independent stops, all in place before the first battery-powered spin: (1) stop command from the laptop (single key/button in the control software); (2) firmware watchdog disables the motor driver if the laptop&rsquo;s heartbeat is not received for &gt;0.5 s; (3) latching power-isolation switch on the top face of the body. On the bench PSU, the PSU output switch is the stop. Firmware arming sequence + speed and current limits. Current limited by PSU setting or battery fuse/BMS. New firmware/gains first tested with the body clamped or the wheel speed limit reduced. Note: wheel coasts after power removal &#x2014; keep hands clear until stopped.</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">6</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left"><b>Mains electric shock</b> (bench PSU, oscilloscope, soldering station)</td>
+<td class="org-left">Electrocution of user</td>
+<td class="org-left">Department-supplied, PAT-tested equipment only; inspect leads before use; no modification of mains equipment; no extension daisy-chains; nothing project-built connected to mains (project circuits are 12 V DC).</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">5</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left"><b>Low-voltage high-current faults</b> (short circuit, wrong polarity, regenerative over-voltage, capacitor failure)</td>
+<td class="org-left">Burns from hot components/wires, capacitor venting, small fire</td>
+<td class="org-left">PSU current limit set (≤3 A; lower at first power-up); battery fused at the pack. Input fuse and reverse-polarity protection on PCB. Brake resistor/TVS + bulk capacitance for regenerative energy; capacitors rated ≥25 V on the 12 V rail. First power-up of each new board at low current limit with visual/thermal check. Never leave powered rig unattended.</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">6</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left"><b>Hot surfaces</b> (motor, driver ICs, brake resistor)</td>
+<td class="org-left">Minor burns</td>
+<td class="org-left">Allow cool-down; touch-test only with back of finger after power-off; brake resistor mounted away from handling points.</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left"><b>Soldering &#x2014; burns</b></td>
+<td class="org-left">Burns to user</td>
+<td class="org-left">Iron returned to stand every time; not left unattended while on or cooling; work area clear.</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-left"><b>Soldering &#x2014; fumes</b></td>
+<td class="org-left">Occupational asthma (flux fumes)</td>
+<td class="org-left">Lead-free solder; fume extractor on for all soldering; board elevated/angled to keep face out of plume; limit session length.</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">9</td>
+<td class="org-left"><b>Soldering &#x2014; fire</b></td>
+<td class="org-left">Fire involving flammables near iron</td>
+<td class="org-left">Flammables (including IPA) kept away; iron switched off at end of session; never placed on flammable surfaces.</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">5</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">10</td>
+<td class="org-left"><b>SMD assembly</b> (solder paste, pick-and-place, reflow)</td>
+<td class="org-left">Skin contact/ingestion of paste (metal + flux); burns from reflow oven; fumes</td>
+<td class="org-left">Only after Canvas-booked training. Nitrile gloves when handling paste; wash hands; no food/drink. Reflow oven used per training with extraction; boards cooled before handling.</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">11</td>
+<td class="org-left"><b>Isopropyl alcohol</b> (flux cleaning)</td>
+<td class="org-left">Flammable; eye/skin irritation, vapour</td>
+<td class="org-left">Small dispensing bottle only; away from iron and hot boards; ventilated area; safety glasses; follow SDS/COSHH.</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">12</td>
+<td class="org-left"><b>Hand tools / cutting component leads</b></td>
+<td class="org-left">Cuts; flying lead offcuts into eyes</td>
+<td class="org-left">Safety glasses when trimming leads/cutting; hold offcut while cutting; correct tool for job; read EEE hand-tool SOP.</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">13</td>
+<td class="org-left"><b>Lone / out-of-hours working</b></td>
+<td class="org-left">Delayed help after any of the above</td>
+<td class="org-left">Hardware work only during lab opening hours (9&#x2013;5) with others present; no rig testing alone.</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">14</td>
+<td class="org-left"><b>Fatigue / rushing near deadlines</b></td>
+<td class="org-left">Increased error rate in all tasks above</td>
+<td class="org-left">Plan to avoid last-minute build; breaks during long sessions; no powered testing when tired.</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">15</td>
+<td class="org-left"><b>Li-ion battery fire / thermal runaway</b> (short circuit, over-discharge, mechanical damage, defective cells)</td>
+<td class="org-left">Fire, toxic smoke, burns to user and others in the lab</td>
+<td class="org-left">Protected pack with BMS (over-charge, over-discharge, over-current, short-circuit) from a reputable supplier, bought via the department &#x2014; no unbranded cells. Fuse (≤5 A) at the pack terminals. Keyed, polarised connector (e.g. XT30); no exposed terminals. Pack held in a rigid mount outside the wheel plane, so wheel fragments cannot reach it, and away from sharp edges. Firmware low-voltage cut-off as backup to the BMS. Inspected for swelling, damage or heat before each use; damaged packs taken out of service and disposed of via technicians. Rig never left powered unattended. Know the extinguisher location and evacuation route.</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">5</td>
+<td class="org-left">N</td>
+</tr>
+
+<tr>
+<td class="org-right">16</td>
+<td class="org-left"><b>Li-ion charging and storage</b></td>
+<td class="org-left">Fire from overcharging or a faulty charger, during charging or in storage</td>
+<td class="org-left">Department-approved charger (UKCA/CE marked) matched to chemistry and cell count. Charged in the lab only, during working hours, attended, with the pack removed from the rig, on a non-flammable surface inside a fire-resistant battery bag; not charged overnight. Charging stopped if the pack becomes hot or swollen. Stored in a fire-resistant bag at storage charge, as directed by the technicians; the battery is not taken home.</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">5</td>
+<td class="org-left">N</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org95c133f" class="outline-2">
+<h2 id="org95c133f"><span class="section-number-2">3.</span> Additional notes for the form</h2>
+<div class="outline-text-2" id="text-3">
+<ul class="org-ul">
+<li><b>Not used:</b> lasers, mains-voltage project circuits, slip rings/tethers on the rotating body. The
+RA will be revised and re-approved before introducing any of these, or before changing battery
+type or capacity.</li>
+<li><b>Out of scope (technician-operated):</b> PCB fabrication, laser cutting, 3D printing &#x2014; requested
+via the Fabrication Request form.</li>
+<li>All purchases through the Component Request Form via supervisor.</li>
+<li><b>Fire evacuation / assembly point:</b> TODO &#x2014; 4th-floor route; assembly point front of Harold Cohen
+Library.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org7b01a88" class="outline-2">
+<h2 id="org7b01a88"><span class="section-number-2">4.</span> Open items before submission</h2>
+<div class="outline-text-2" id="text-4">
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> Room reference for the 4th-floor lab</li>
+<li class="off"><code>[&#xa0;]</code> Training dates; book SMD training</li>
+<li class="off"><code>[&#xa0;]</code> Guard material: polycarbonate availability (and whether it can be cut in-house &#x2014; PC is often
+not laser-cut); fallback aluminium</li>
+<li class="off"><code>[&#xa0;]</code> Agree supervision level with Kai (Mon 5 Oct)</li>
+<li class="off"><code>[&#xa0;]</code> Battery: confirm pack (proposed 3S protected 18650, ≤3 Ah), charger, and the lab&rsquo;s battery
+charging/storage rules with the technicians</li>
+<li class="off"><code>[&#xa0;]</code> Choose the wireless link (BLE vs Wi-Fi) &#x2014; the wireless stop and watchdog must work before
+the first battery-powered spin</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Tama Harrison</p>
+<p class="date">Created: 2026-10-05 Mon 10:10</p>
+</div>
+</body>
+</html>

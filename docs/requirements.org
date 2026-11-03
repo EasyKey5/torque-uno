@@ -1,0 +1,115 @@
+#+TITLE: Requirements --- working register
+#+AUTHOR: Tama Harrison
+#+STARTUP: showall
+
+# Single source of truth for requirement IDs and values. The plan's requirements
+# table (docs/Project-Plan/Project-Plan.org), the simulation (sim/params.m,
+# sim/lib/check_requirements.m) and the risk assessment follow this file. TBDs
+# are tracked here only.
+
+# Status: =Agreed= (settled with user), =TBD= (value set later by the named
+# WP/activity), =Stretch= (further objective, not required for success).
+
+# Simulation results against these IDs: sim/results/requirements.md.
+
+* Attitude control
+| ID     | Requirement                                               | Value                                                                  | Verification                                       | Status |
+|--------+-----------------------------------------------------------+------------------------------------------------------------------------+----------------------------------------------------+--------|
+| CTR-01 | Hold commanded attitude about the vertical axis           | ±1° for 60 s; report true drift rate over 10 min                       | Overhead camera + printed protractor ring          | Agreed |
+| CTR-02 | Rotate through a commanded 90° step                       | < 5 s to within ±1°                                                    | Overhead camera; gyro log                          | Agreed |
+| CTR-03 | Overshoot on 90° slew                                     | < 10 %                                                                 | Overhead camera; gyro log                          | Agreed |
+| CTR-04 | Recover from a hand-imparted disturbance                  | 20–40 °/s (gyro-measured); within ±1° in < 3 s                         | Gyro log for imparted rate; camera for recovery    | Agreed |
+| CTR-05 | Baseline controller                                       | PID                                                                    | Demonstration                                      | Agreed |
+| CTR-06 | Attitude sensing                                          | Onboard MEMS gyro only; full scale ≥ ±250 °/s; bias calibrated at rest | Design inspection; calibration log                 | Agreed |
+| CTR-07 | Consecutive same-direction 90° slews, each meeting CTR-02 | ≥ 4                                                                    | Overhead camera; gyro and wheel-speed log          | Agreed |
+| CTR-08 | Wheel saturation handling                                 | At speed cap: torque limited, flag in telemetry, no runaway            | Test (sustained disturbance to cap); telemetry log | Agreed |
+
+* Physical
+| ID     | Requirement                                      | Value                                       | Verification                 | Status |
+|--------+--------------------------------------------------+---------------------------------------------+------------------------------+--------|
+| PHY-01 | Rotating body fits a 1U CubeSat envelope         | 10 × 10 × 10 cm                             | Measurement                  | Agreed |
+| PHY-02 | Rotating body mass                               | ≤ 1.33 kg (CubeSat spec limit); see budget  | Weighing                     | Agreed |
+| PHY-03 | Body supported on a single vertical axis         | 2 bearings, ground shaft; Aluminium housing | Design inspection            | Agreed |
+| PHY-04 | Overall centre of mass offset from rotation axis | ≤ 2 mm                                      | CAD mass properties          | Agreed |
+| PHY-05 | Bearing friction torque about the vertical axis  | ≤ 3 mN·m                                    | Spin-down test               | Agreed |
+| PHY-06 | Rotation axis vertical                           | Within 0.1°                                 | Spirit level on hub top face | Agreed |
+
+# ** Mass budget (PHY-02)
+# Allocations, to be checked against CAD and weighing.
+
+# | Item                                             | Allocation (g) | Basis                                      |
+# |--------------------------------------------------+----------------+--------------------------------------------|
+# | Flywheel                                         |            200 | Sim sizing: brass D75 × 4.5 mm, 171 g      |
+# | Motor                                            |             80 | Sim placeholder (gimbal BLDC class)        |
+# | Flywheel enclosure (aluminium)                   |            120 | Estimate                                   |
+# | Battery pack (18650 cells, BMS, fuse, connector) |            170 | Estimate                                   |
+# | Main PCB, populated                              |             50 | Estimate                                   |
+# | Structure (frame, panels, fasteners)             |            400 | Estimate                                   |
+# | Hub and shaft (rotating parts of turntable)      |             40 | Estimate from bearing-turntable spec P3/P4 |
+# | Wiring, switch, miscellaneous                    |             60 | Estimate                                   |
+# | Margin                                           |            210 | 16 % of limit                              |
+# |--------------------------------------------------+----------------+--------------------------------------------|
+# | Total                                            |           1330 | PHY-02                                     |
+
+* Power
+| ID     | Requirement                                 | Value                                 | Verification                   | Status                      |
+|--------+---------------------------------------------+---------------------------------------+--------------------------------+-----------------------------|
+| PWR-01 | Average power while holding, no disturbance | ≤ 2 W                                 | Measured V × I logged on board | TBD (after motor selection) |
+| PWR-02 | Runtime on one charge                       | ≥ 30 min                              | Timed test                     | Agreed                      |
+| PWR-03 | Energy per 90° slew                         | Report measured value                 | Measured V × I integration     | Agreed                      |
+| PWR-04 | Onboard power source                        | Protected 18650 Li-ion Batteries, BMS | Design inspection              | Agreed                      |
+
+* Thermal
+| ID     | Requirement                                                     | Value   | Verification   | Status                      |
+|--------+-----------------------------------------------------------------+---------+----------------+-----------------------------|
+| THM-01 | Motor and driver IC temperature after 10 min repeated 90° slews | ≤ 60 °C | IR thermometer | TBD (after motor selection) |
+
+* Electronics
+| ID     | Requirement                              | Value                                                      | Verification                            | Status |
+|--------+------------------------------------------+------------------------------------------------------------+-----------------------------------------+--------|
+| ELE-01 | Microcontroller                          | ESP32-S3 module on custom PCB                              | Design inspection                       | Agreed |
+| ELE-02 | Motor driver                             | BLDC, own driver on PCB, magnetic encoder on motor         | Design inspection                       | Agreed |
+| ELE-03 | Main PCB                                 | All-in-one, 2-layer                                        | Design inspection                       | Agreed |
+| ELE-04 | Wireless command and telemetry to laptop | BLE; telemetry ≥ 50 Hz: angle, rate, wheel speed, bus V, I | Demonstration; logged sample times      | Agreed |
+| ELE-05 | Onboard power measurement                | Battery bus voltage and current sensed on PCB              | Design inspection; check vs bench meter | Agreed |
+
+* Safety
+| ID     | Requirement                                | Value                                                              | Verification                   | Status                                      |
+|--------+--------------------------------------------+--------------------------------------------------------------------+--------------------------------+---------------------------------------------|
+| SFT-01 | Stop command from laptop disables motor    | Single key/button                                                  | Test before first battery spin | Agreed                                      |
+| SFT-02 | Motor disabled on loss of laptop heartbeat | > 0.5 s                                                            | Test before first battery spin | Agreed                                      |
+| SFT-03 | Latching power-isolation switch            | Top face of body; isolates battery from all loads                  | Test                           | Agreed                                      |
+| SFT-04 | Flywheel speed hard limit in firmware      | ≤ 600 rpm                                                          | Test                           | Agreed                                      |
+| SFT-05 | Flywheel enclosed                          | Aluminium enclosure; no acrylic or polycarbonate                   | Inspection                     | Agreed                                      |
+| SFT-06 | Flywheel material                          | Aluminium or brass                                                 | Inspection                     | Agreed                                      |
+| SFT-07 | Battery pack protection                    | Fuse at pack terminals; firmware low-voltage cut-off               | Inspection; bench-PSU test     | TBD (fuse sized from measured peak current) |
+| SFT-08 | Motor arming and current limit             | Motor enabled only after arm command; firmware motor current limit | Test                           | Agreed                                      |
+| SFT-09 | PCB input protection                       | Reverse-polarity protection; input fuse; regen over-voltage clamp  | Design inspection; bench test  | Agreed                                      |
+
+* Simulation
+| ID     | Requirement                                             | Value       | Verification                | Status |
+|--------+---------------------------------------------------------+-------------+-----------------------------+--------|
+| SIM-01 | MATLAB model shows CTR-01..04 met before hardware build | Deliverable | sim/results/requirements.md | Agreed |
+
+* Further objectives
+| ID     | Objective                                                           | Status  |
+|--------+---------------------------------------------------------------------+---------|
+| STR-01 | LQR controller compared against PID                                 | Stretch |
+| STR-02 | Magnetorquer momentum-dumping modelled in MATLAB                    | Stretch |
+
+# Bench-scale note for STR-03/04: lab horizontal geomagnetic field ≈ 17 µT; a
+# 0.2 A·m² dipole gives ≈ 3 µN·m vs ≈ 1 mN·m bearing friction, so magnetorquer
+# torque cannot be demonstrated on the rig --- simulation and static
+# measurement only.
+
+# * Open inputs
+# - Bearing friction torque: spin-down test of bare body (both bearing pairs);
+#   verifies PHY-05. Sim assumes 1.0 mN·m Coulomb, 1.2 mN·m breakaway.
+# - Body moment of inertia: from CAD once layout exists. Sim estimate
+#   2.0e-3 kg·m²; CTR-02 still met at ×1.75.
+# - Wheel: sized by sim (sizing_sweep): inertia 1.2e-4 kg·m² (brass disc
+#   D75 × 4.5 mm, 171 g), speed cap 600 rpm (momentum 7.5e-3 N·m·s, 0.24 J
+#   stored), minimum motor torque 8 mN·m. Re-check once friction and body
+#   inertia are measured.
+# - Motor selection: sets PWR-01, THM-01 and the SFT-08 current limit.
+# - Measured peak battery current: sets the SFT-07 fuse rating.
