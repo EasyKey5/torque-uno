@@ -1,0 +1,237 @@
+#+TITLE: Motor and controller options --- research report
+#+STARTUP: showall
+
+# Working report for WP1/WP2, drafted with Claude in November 2026. Reword
+# anything reused in an assessed report (AI Tier 2). Requirement IDs and agreed
+# values live in requirements.org; nothing here changes them.
+
+# Method: a multi-agent web search fetched about 20 sources and fact-checked
+# claims against them. Its final write-up step failed, so the key motor and
+# driver data was then checked directly against the datasheets listed under
+# Sources. Calculations are by hand using the six-step-equivalent motor
+# equation V = n/Kv + I×R. They have not been simulated. Prices and stock were
+# read from the RS, Mouser UK and Farnell websites on 2026-11-06 unless marked
+# as an earlier snapshot: check them again before ordering.
+#
+# Updated 2026-11-06 to match docs/inverter-design.org and the comparison page
+# for Kai: current parts for the discrete inverter, today's stock, and the
+# maxon EC 20 flat's 3000 rpm result recalculated.
+
+* Summary
+| Top speed | Best motor                                         | Best controller                                                           | Verdict                                                    |
+|-----------+----------------------------------------------------+---------------------------------------------------------------------------+------------------------------------------------------------|
+| 600 rpm   | Mercury DM3505EC with AS5048A (SparkFun ROB-27478) | TI DRV8311H integrated driver                                             | Works, but needs a heavy 171 g wheel                       |
+| 3000 rpm  | Faulhaber 2232S012BX4 (RS 873-4818)                | Discrete inverter (DRV8300 + CSD88537ND + INA240 + ADS8353), or DRV8316CR | *Recommended*                                              |
+| 6000 rpm  | Faulhaber 2214S006BXT R (RS 184-6932)              | DRV8316CR, or the discrete inverter with a hardware current limit         | Possible; current limiting and stored energy are the risks |
+
+*Recommendation: design for 3000 rpm with the Faulhaber 2232S012BX4 and a discrete inverter.* Tama chose both on 2026-11-06. The inverter design is in docs/inverter-design.org.
+- It is the fastest case where a well-documented, UK-stocked motor delivers 8 mN·m from a 9 V pack, and the motor can still reach about 5,900 rpm at 11.1 V for 6000 rpm experiments.
+- The wheel drops from 171 g to 34–77 g. Stored energy rises from 0.24 J to 1.18 J, half the 6000 rpm figure.
+- A discrete inverter gives the most control, which suits a control project. Use the DRV8316CR as the lower-risk fallback.
+- The 600 rpm case is the simplest to build. The 6000 rpm motor (2214S006BXT R) was back in stock at RS on 2026-11-06, but its 5.2 A stall current and 2.37 J stored energy remain.
+
+* What the motor has to do
+Unchanged from motor_requirement.org: ≥ 8 mN·m, 9.0–12.6 V pack, ≤ 5 A pack fuse, a magnetic encoder on the motor, 1U footprint (100 × 100 mm) with height free.
+
+The momentum target stays at 7.54 mN·m·s, so the wheel shrinks as top speed rises:
+
+| Top speed | Wheel J (kg·m²) | Stored energy | 0 to top speed at 8 mN·m | Kv floor (8 V usable) | Example wheels                                         |
+|-----------+-----------------+---------------+--------------------------+-----------------------+--------------------------------------------------------|
+| 600 rpm   | 1.2e-4          | 0.24 J        | 0.94 s                   | 75 rpm/V              | Brass Ø75 × 4.5 mm, 171 g                              |
+| 3000 rpm  | 2.4e-5          | 1.18 J        | 0.94 s                   | 375 rpm/V             | Brass Ø50 × 4.6 mm, 77 g; aluminium Ø75 × 2.9 mm, 34 g |
+| 6000 rpm  | 1.2e-5          | 2.37 J        | 0.94 s                   | 750 rpm/V             | Brass Ø40 × 5.6 mm, 60 g; aluminium Ø60 × 3.5 mm, 27 g |
+
+Two pass criteria are used below:
+- *Strict:* 8 mN·m at top speed from 9 V.
+- *Friction-only:* 3 mN·m at top speed from 9 V. This is enough in practice, because the speed is capped and braking is easy at high speed.
+
+Flight wheels support going faster:
+- AAC Clyde Space RW210 wheels for 1–3U run at 10,000–15,000 rpm, but give only ±0.1 mN·m of torque.
+- The rig needs about 80 times more torque because of turntable friction and fast slews, so flight wheels are a guide to speed, not to motor size.
+
+* Motor options
+Values come from manufacturer datasheets. Kt is in mN·m/A, R is line-to-line, and current is at 8 mN·m.
+
+| Motor                                 | Kv (rpm/V) | Kt   | R (Ω)             | L           | Pole pairs | Size (mm)                 | Mass (g)  | Current (A) | Stall at 12.6 V | 600  | 3000         | 6000         |
+|---------------------------------------+------------+------+-------------------+-------------+------------+---------------------------+-----------+-------------+-----------------+------+--------------+--------------|
+| Mercury DM3505EC (SparkFun ROB-27478) | 117        | 80   | 6.34              | 1.08 mH     | 11         | Ø40 × 21 with encoder     | 71        | 0.10        | 2.0 A           | Pass | Fail         | Fail         |
+| DFRobot FIT1034                       | 220        | 43   | 2.3–5.1 (unclear) | 0.86–2.8 mH | 7          | Ø34.5 × 19.5              | ~59 gross | 0.18–0.22   | 2.5–5.5 A       | Pass | Fail         | Fail         |
+| Faulhaber 2214S012BXT R               | 561        | 17   | 6.95              | 0.88 mH     | 7          | Ø22 × 14                  | 25.5      | 0.47        | 1.8 A           | Pass | Pass (8.6 V) | Fail         |
+| Faulhaber 2232S012BX4                 | 562        | 17   | 3.5               | 0.115 mH    | 2          | Ø22 × 32 (46 with shafts) | 65        | 0.47        | 3.6 A           | Pass | Pass (7.0 V) | Fail at 9 V  |
+| Faulhaber 2214S006BXT R               | 997        | 9.58 | 2.42              | 0.27 mH     | 7          | Ø22 × 14                  | 25.5      | 0.84        | 5.2 A           | Pass | Pass         | Pass (8.0 V) |
+| Faulhaber 2232S006BX4                 | 1198       | 7.97 | 0.73              | 0.025 mH    | 2          | Ø22 × 32                  | 65        | 1.00        | 17 A            | Pass | Pass         | Pass (5.7 V) |
+| maxon EC 20 flat 351007               | 812        | 11.8 | 7.45              | 0.75 mH     | 4          | Ø20                       | 22        | 0.68        | 1.7 A           | Pass | Pass (8.7 V) | Fail         |
+
+The voltages in brackets are what the motor needs at top speed and 8 mN·m, against the 9 V minimum.
+- *Tight passes:* the 2214S012BXT R (8.6 V) and maxon EC 20 flat (8.7 V) pass 3000 rpm with under 0.5 V to spare.
+- *Correction:* an earlier version of this table gave the maxon EC 20 flat as friction-only at 3000 rpm. Recalculating gives 3000 / 812 + (8 / 11.8) × 7.45 = 8.7 V, a strict pass.
+
+** 600 rpm: Mercury DM3505EC (SparkFun ROB-27478)
+- *Strengths:* complete datasheet; AS5048A 14-bit SPI encoder built in; high Kt, so 8 mN·m needs only 0.10 A; R of 6.34 Ω limits stall current to 2 A. That makes voltage-mode FOC inherently safe.
+- *Note the part number:* ROB-27477 has no encoder; ROB-27478 has the AS5048A.
+- *Weaknesses:* at 1,050 rpm no-load from 9 V, it can only do the 600 rpm case. The 11 pole pairs need FOC updates of at least about 2.2 kHz at 600 rpm, which is easy on the RP2350. At 71 g it is just inside the 80 g allocation.
+- *Sourcing:* SparkFun (US) and Digi-Key. Digi-Key Belgium showed 16 in stock for ROB-27477 in an earlier snapshot; ROB-27478 stock was not checked. No UK stockist was found.
+- *Compared with the FIT1034:* the DM3505EC is better documented. The FIT1034's listing contradicts itself on resistance and Kv. Its AS5600 encoder uses I2C, and one reaction-wheel build found that I2C limited it to about 1,000 rpm (MACE log).
+
+** 3000 rpm: Faulhaber 2232S012BX4 (recommended)
+- *Strengths:* complete datasheet; passes the strict 3000 rpm test with 7.0 V; rated 14.7 mN·m continuous at 1 A; 65 g; preloaded ball bearings.
+- *Encoder:* the standard version has a second shaft end at the rear. A diametric magnet there can drive an AS5047P (SPI or ABI) or MT6835 (SPI) sensor on a small board. Ordering option Y158 removes the rear shaft, so avoid it.
+- *Inductance:* only 115 µH, which suggests a slotless winding with very low cogging (confirm on the bench). Low inductance means high ripple: at 12.6 V it is about 0.65 A pk-pk at 40 kHz. Use 40–60 kHz PWM.
+- *Bearings:* axial limit 2 N at 3,000 rpm. A 34–77 g wheel weighs 0.3–0.76 N, within the limit; the 171 g brass wheel would not be.
+- *Pole pairs:* 2 pole pairs give only 100 Hz electrical at 3000 rpm, which is easy for the FOC loop.
+- *At 11.1 V:* it holds about 5,900 rpm against 3 mN·m, so 6000 rpm experiments are possible near full charge.
+- *Sourcing:* RS 873-4818, £213.44 ex VAT, in stock on 2026-11-06. It is expensive, and a spare is worth considering.
+- *Alternative:* the Faulhaber 2214S012BXT R (RS 184-6933, £160.20, in stock on 2026-11-06, 25.5 g) passes 3000 rpm with only 0.4 V to spare, has an exposed external rotor, and needs its magnet mounted on the rotor or wheel hub.
+
+** 6000 rpm: Faulhaber 2214S006BXT R
+- *Strengths:* passes the strict 6000 rpm test with 8.0 V from 9 V. At 25.5 g, it is the lightest motor that does.
+- *Current:* stall is 5.2 A at 12.6 V, against a 1.18 A thermal rating, so a hardware current limit is mandatory.
+- *Pole pairs:* 7 pole pairs give 700 Hz electrical at 6000 rpm, so FOC must run at about 14 kHz or faster. The RP2350 manages about 51 kHz in SimpleFOC benchmarks.
+- *Encoder:* an external rotor with no housing, so mount the magnet in the wheel hub. The 2214…BXT H housed version takes Faulhaber's IEF3-4096 encoder. That outputs 4096-line ABI at 5 V, so it needs a 5 V supply and level shifting.
+- *Sourcing:* RS 184-6932, £160.20 ex VAT. It showed "temporarily out of stock" in an earlier snapshot, but was in stock on 2026-11-06.
+- *Not recommended:* the 2232S006BX4. Its 0.73 Ω and 25 µH would allow a 17 A stall and very fast current rise, which needs a fast hardware current loop and 60 kHz+ PWM, and no UK stock was found.
+
+* How the Pico 2 W does the control
+** Where the work happens
+PIO state machines are timing coprocessors: they move bits on pins with cycle-exact timing, but they can't do FOC maths. The split that gives the most control:
+
+| Job                                    | Where on the RP2350                     | Notes                                                                    |
+|----------------------------------------+-----------------------------------------+--------------------------------------------------------------------------|
+| FOC maths, current and speed loops     | Core 1 (Cortex-M33 with FPU)            | SimpleFOC measured about 51,000 voltage-mode loops/s with an SPI encoder |
+| Attitude PID, gyro, BLE telemetry      | Core 0                                  | Keeps wireless jitter away from the motor loop                           |
+| Three-phase PWM                        | Hardware PWM slices, not PIO            | Phase-correct (centre-aligned), double-buffered, started in lockstep     |
+| ABI encoder decoding                   | PIO                                     | Official quadrature_encoder_substep example; no CPU time                 |
+| External SPI ADC capture               | PIO or hardware SPI, triggered from PWM | Best fix for the internal ADC's limits (below)                           |
+| SPI encoder (AS5047P, AS5048A, MT6835) | Hardware SPI                            | SimpleFOC drivers exist                                                  |
+
+PWM resolution at 150 MHz in phase-correct mode, where the period is 2 × (TOP+1) cycles:
+
+| PWM frequency | Counts (TOP+1) | Use                                       |
+|---------------+----------------+-------------------------------------------|
+| 20 kHz        | 3750           | Higher-inductance motors (DM3505EC, 2214) |
+| 25 kHz        | 3000           |                                           |
+| 40 kHz        | 1875           | Faulhaber 2232 BX4                        |
+| 60 kHz        | 1250           | Very low-inductance motors                |
+
+** ADC limits (important)
+- *Pins:* the Pico 2 W gives only three user ADC inputs (GP26–28). GP29/ADC3 measures VSYS and is shared with the wireless chip's SPI clock.
+- *Quality:* the RP2350 ADC is a single 12-bit SAR with 9.2 effective bits at 500 ksps. It converts channels in turn, so phase currents aren't sampled at the same instant.
+- *Reference:* there is no on-chip reference. The board feeds the ADC from the filtered 3.3 V supply; the Pico 2 W datasheet recommends an external 3.0 V reference for accuracy.
+- *Maintainer advice:* the SimpleFOC maintainer does not recommend the RP2350 where current sensing matters.
+- *SimpleFOC support:* its RP2350 current-sense driver supports inline sensing only. It is not synchronised to the PWM and drops samples to 8 bits, so low-side sensing (as in the DRV8316C and DRV8311) needs custom firmware.
+- *Erratum E9:* this affected ADC and pull-down inputs and is fixed in the A3/A4 chip revisions (2025). Check the revision on the boards bought.
+
+Practical plan, as used in docs/inverter-design.org:
+- Read both phase currents with an external simultaneous-sampling ADC, the TI ADS8353 (2 channels, 16-bit, 600 ksps, SPI; Mouser UK £18.70, 362 in stock on 2026-11-06). Don't use the ADS8354: it needs fully-differential inputs with a ±0.1 V common-mode window, which a single-ended INA240 output breaks.
+- That leaves the three Pico ADC pins for bus voltage (GP26), motor temperature (GP27) and bus current from an INA181 on the DC-link shunt (GP28, ELE-05).
+
+** Power for the Pico
+VSYS accepts only 1.8–5.5 V, so the 3S pack needs a buck regulator. The design uses a TI LMR51420 (4.5–36 V input, 2 A) feeding VSYS through a Schottky diode. The DRV8316C's built-in 200 mA buck may be too small for the Pico 2 W plus wireless and sensors, so the fallback needs a separate buck too.
+
+* Controller option A: integrated driver ICs
+In all of these the MCU supplies every PWM edge; none does commutation itself.
+
+| Driver    | Supply (abs max) | Peak current | RDS(on) HS+LS | Current sensing                          | PWM inputs | Package     | UK source, 2026-11-06                    | Verdict                                                          |
+|-----------+------------------+--------------+---------------+------------------------------------------+------------+-------------+------------------------------------------+------------------------------------------------------------------|
+| DRV8316CR | 4.5–35 V (40 V)  | 8 A          | 95 mΩ         | 3 low-side, 0.15–1.2 V/A, ±50 mA offset  | 3x or 6x   | VQFN-40 7×5 | Mouser £4.73: 5 in stock, 6,000 on order | Best all-rounder; strongest protection; the fallback             |
+| DRV8311H  | 3–20 V (24 V)    | 5 A          | 210 mΩ        | 3 low-side, 0.25–2 V/A, ±50–70 mA offset | 3x or 6x   | WQFN-24 3×3 | Mouser £1.69: 8,526                      | Best sense resolution for small currents; tight on regen voltage |
+| DRV8313   | 8–60 V           | 2.5 A        | 480 mΩ        | None (separate low-side grounds)         | 3x IN/EN   | HTSSOP-28   | RS 813-6469: in stock                    | Easy to solder; needs external amplifiers                        |
+| STSPIN830 | 7–45 V           | 1.5 A rms    | ~1 Ω          | None (shunt pins, built-in limiter)      | 3x or 6x   | QFN-24 4×4  | Farnell 2987063 £2.91; stock not shown   | Preferred supplier; high losses                                  |
+| TMC6300   | 2–11 V           | 2 A          | 340 mΩ        | None                                     | 6x         | QFN-20 3×3  | -                                        | *Unsuitable*: 12.6 V exceeds its rating                          |
+| L6230     | 8–52 V           | 2.8 A        | -             | Shunt pins                               | 3x         | PowerSO-36  | Farnell: no longer stocked               | Used in a UPC thesis wheel; avoid now                            |
+
+Notes:
+- *DRV8316C:* its current sensing and cycle-by-cycle limit share one pin, so you get one or the other. Dead time is 500 ns typical at the fastest slew setting, and the minimum pulse is 600 ns, which slightly limits duty range at 40 kHz. It also has a DRVOFF hardware disable (useful for SFT-01/02) and overvoltage protection at 22 or 34 V.
+- *DRV8311:* at 2 V/A its range is only about ±0.7 A, which suits the DM3505EC (0.10 A at 8 mN·m) but not the 2214S006. Its 24 V absolute maximum leaves little room for regen spikes, so the SFT-09 clamp must stay below that. The S (SPI) version is preview only; H and P are released.
+
+* Controller option B: discrete inverter (maximum control)
+This gives every switch, sense point and protection decision to you and the Pico. It is the closest to "designing the controller", and it avoids the integrated parts' compromises: shared sense/limit pin, long dead time, current offset and low-side-only sensing. The cost is more parts, more board area and protection you must design yourself.
+
+** Chosen parts
+These are the parts in docs/inverter-design.org, which has the full design, values and parts list. They replace this report's first shortlist (see Changes below).
+
+| Function                  | Part                                                           | Why                                                                                                                      | UK source, 2026-11-06                   |
+|---------------------------+----------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------+-----------------------------------------|
+| Gate driver               | TI DRV8300DRGER (VQFN-24)                                      | Six independent 3.3 V inputs; GVDD 5–20 V runs straight from the pack; bootstrap diodes built in; about 200 ns dead time | Mouser £0.62, 21,325                    |
+| Gate driver (alternative) | ADI/Trinamic TMC6200-TA (TQFP-48)                              | Adds three in-line amplifiers (gain 5/10/20), SPI diagnostics and 100% duty                                              | Farnell 3050628, 136 (earlier snapshot) |
+| MOSFETs                   | 3 × TI CSD88537ND (dual N, 60 V, SO-8)                         | One half-bridge per package; 15 mΩ max, so about 30 mW loss per phase at 1 A                                             | Mouser £2.37, 15,580                    |
+| Phase current amplifiers  | 2 × TI INA240A1PWR (20 V/V)                                    | In-line sensing with PWM rejection; −4 to 80 V common mode; valid at any point in the PWM cycle                          | RS 226-4772 (pack of 5), £2.85 each     |
+| Shunts                    | 3 × 20 mΩ 1% 2512 (Vishay WSL2512R0200FEA)                     | ±3 A full scale on the phases; the third is the DC-link shunt                                                            | Mouser £1.39, 19,307                    |
+| ADC                       | TI ADS8353IPWR (2 ch simultaneous, 16-bit, SPI)                | Samples both phases at the same instant; accepts the INA240's single-ended output; frees Pico ADC pins                   | Mouser £18.70, 362                      |
+| Overcurrent trip          | TLV1704 + TLV1701 comparators, 74LVC1G74 latch, 74LVC08 gating | DRV8300 has no overcurrent or thermal protection; trips all six gates at ±2.5 A in under 1 µs                            | Mouser                                  |
+| Bus protection            | SMBJ13A TVS, ≥ 25 V bulk capacitors, input fuse                | SFT-09 regen clamp; 1.2–2.4 J stored at 3000–6000 rpm                                                                    | Mouser (TVS)                            |
+
+Changes from the first shortlist:
+- *ADC:* ADS8353 instead of ADS8354, because the ADS8354 needs fully-differential inputs.
+- *MOSFETs:* CSD88537ND instead of the SiZ340DT, because RS is dropping the SiZ340DT and Farnell UK stock was unconfirmed. The FDS6990A was also rejected as obsolete.
+- *Shunts:* 20 mΩ instead of 38–75 mΩ, to suit the 2232S012BX4's 0.47 A working current with headroom to the 3.6 A stall.
+- *Suppliers:* Farnell and RS don't stock the DRV8300, CSD88537ND or ADS8353, so most ICs come from Mouser UK, which isn't a preferred supplier.
+
+** Design notes
+- *Shunt placement:* in-line shunts (in the motor phase) give continuous current readings, so sampling timing is relaxed and SimpleFOC's RP2350 inline mode can be a starting point. Low-side shunts are cheaper but only valid while the low-side FET conducts.
+- *Two phases are enough:* the third current is −(Ia + Ib). That matches the two-channel ADS8353.
+- *Protection:* without an overcurrent trip, a firmware fault could drive the 2214S006's 5.2 A stall current. Keep the comparator trip independent of firmware.
+- *Layout:* open-source boards such as SimpleFOC Drive, and community DRV8305 board reviews, are useful layout references.
+- *Precedent:* OreSat's reaction-wheel redesign used a custom three-phase controller with hardware-synchronised sensing, and found FOC gave the best torque and dynamic response.
+
+* Recommended combinations
+| Rank | Speed    | Motor                        | Controller                                          | Why                                                                      | Main risk                                                                   |
+|------+----------+------------------------------+-----------------------------------------------------+--------------------------------------------------------------------------+-----------------------------------------------------------------------------|
+| 1    | 3000 rpm | Faulhaber 2232S012BX4        | Discrete: DRV8300 + CSD88537ND + INA240A1 + ADS8353 | Most control, strict pass at 9 V, light wheel, motor from RS (preferred) | Most design work; £213 motor; 40–60 kHz PWM needed; most ICs only at Mouser |
+| 2    | 3000 rpm | Faulhaber 2232S012BX4        | DRV8316CR                                           | Same motor; much less design; built-in protection                        | Sense/limit trade-off; ±50 mA offset; only 5 in stock at Mouser             |
+| 3    | 600 rpm  | Mercury DM3505EC (ROB-27478) | DRV8311H                                            | Built-in SPI encoder; self-limiting current; cheapest                    | Heavy wheel; no UK stockist found                                           |
+| 4    | 6000 rpm | Faulhaber 2214S006BXT R      | DRV8316CR (current-limit mode) or discrete          | Meets Kai's 6000 rpm at 9 V; very light; in stock at RS                  | 5.2 A stall; most stored energy; magnet must go on the hub                  |
+
+* Risks and unknowns
+- *Stock:* prices and stock were read from the RS, Mouser UK and Farnell websites on 2026-11-06, except those marked as an earlier snapshot. Recheck before ordering, because back orders are refused.
+- *Supplier:* most of the discrete inverter's ICs are only at Mouser UK, which isn't a preferred supplier. Check that the technicians will order from it.
+- *Risk assessment:* stored energy rises from 0.24 J to 1.18 J (3000 rpm) or 2.37 J (6000 rpm). Update the assessment and get it re-approved before running faster than 600 rpm. SFT-04 also needs a new value.
+- *Register changes:* ELE-01 still says ESP32-S3. The Pico 2 W also needs a buck regulator from the pack.
+- *Unverified items:* Faulhaber motors' cogging and axial load at low speed. The DM3505EC's bearing load is unpublished.
+- *ADC:* the RP2350's internal ADC is weak for current loops. Budget for an external ADC if current control matters.
+- *Research gap:* the 6000 rpm case has thin options. No hobby or gimbal motor with an encoder, about 1000 rpm/V and adequate resistance was found from a UK-approved source.
+
+* Sources
+Comparison page for Kai (private until shared): https://claude.ai/artifact/8gq3KpvhxG6gKLXaqgXNUp
+
+** Motors
+- Mercury DM3505/DM3505EC datasheet (SparkFun ROB-27477/27478): https://cdn.sparkfun.com/assets/d/6/b/5/8/27477_27478_Datasheet.pdf
+- SparkFun ROB-27477 (no encoder) listing: https://www.sparkfun.com/products/27477
+- Faulhaber 2232 BX4 datasheet: https://www.faulhaber.com/fileadmin/Import/Media/EN_2232_BX4_DFF.pdf
+- Faulhaber 2214 BXT R datasheet: https://www.faulhaber.com/fileadmin/Import/Media/EN_2214_BXTR_DFF.pdf
+- Faulhaber IEF3-4096 encoder (IM-Tek mirror): https://www.im-tek.com/docs/faulhaber-ief3-4096-series-encoder-768826.pdf
+- RS listings: 2232S012BX4 https://uk.rs-online.com/web/p/dc-motors/8734818 ; 2214S012BXT R https://uk.rs-online.com/web/p/servo-motors/1846933 ; 2214S006BXT R https://uk.rs-online.com/web/p/servo-motors/1846932
+- maxon EC 20 flat datasheet (Farnell copy): https://www.farnell.com/datasheets/1733400.pdf
+- DFRobot FIT1034: https://www.dfrobot.com/product-3005.html
+
+** Drivers and sensing
+- TI DRV8316C datasheet: https://www.ti.com/lit/gpn/drv8316c
+- TI DRV8311 datasheet: https://www.ti.com/lit/gpn/drv8311
+- TI DRV8313 datasheet: https://www.ti.com/lit/gpn/drv8313
+- ST STSPIN830 datasheet: https://www.st.com/resource/en/datasheet/stspin830.pdf
+- ST L6230 datasheet: https://www.st.com/resource/en/datasheet/l6230.pdf
+- ADI TMC6300 datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/TMC6300_datasheet_rev1.08.pdf
+- TI DRV8300 datasheet: https://www.ti.com/lit/gpn/drv8300
+- ADI TMC6200 datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/TMC6200_datasheet_rev1.08.pdf
+- TI CSD88537ND datasheet: https://www.ti.com/lit/gpn/csd88537nd
+- TI INA240 datasheet: https://www.ti.com/lit/gpn/ina240
+- TI ADS8353 datasheet: https://www.ti.com/lit/gpn/ads8353
+- TI ADS8354 datasheet, for its common-mode limit: https://www.ti.com/lit/gpn/ads8354
+- Vishay SiZ340DT (rejected): https://www.vishay.com/docs/62877/siz340dt.pdf
+- Stock pages (2026-11-06): Mouser UK https://www.mouser.co.uk/c/?q= followed by the part number; RS https://uk.rs-online.com/web/c/?searchTerm= followed by the part number; Farnell https://uk.farnell.com/search?st= followed by the part number
+- TI E2E, INA240 vs INA181: https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/632997/ina240-dc-motor-current-sensing-to-check-if-the-motor-is-stuck-using-either-ina240-or-ina181
+- TI TIDA-010023 low-side sensing reference design: https://www.ti.com/tool/TIDA-010023
+
+** MCU and firmware
+- RP2350 datasheet: https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf
+- Pico 2 W datasheet: https://datasheets.raspberrypi.com/picow/pico-2-w-datasheet.pdf
+- RP2350 A4 revision and E9 fix: https://www.raspberrypi.com/news/rp2350-a4/
+- SimpleFOC RP2350 support thread: https://community.simplefoc.com/t/rp2350-support-raspberry-pico-2/5607
+- SimpleFOC RP2040/RP2350 current-sense source: https://source.simplefoc.com/current__sense_2hardware__specific_2rp2040_2rp2040__mcu_8cpp_source.html
+- pico-examples PIO quadrature decoder: https://github.com/raspberrypi/pico-examples/tree/master/pio/quadrature_encoder_substep
+
+** Reaction-wheel precedents
+- OreSat reaction wheel thesis (Portland State): https://pdxscholar.library.pdx.edu/open_access_etds/7192
+- UPC one-axis 1U wheel with L6230: https://upcommons.upc.edu/bitstreams/6eadf54b-caf1-462b-a22e-3fea13ee68ec/download
+- MACE reaction-wheel log (SimpleFOC Mini, AS5600): https://zeulewan.github.io/geodude-control/electrical/geodude/mace-development-log/
+- AAC Clyde Space RW210 datasheet: https://www.aac-clyde.space/wp-content/uploads/2021/11/RW210.pdf

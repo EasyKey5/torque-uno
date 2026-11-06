@@ -1,0 +1,8 @@
+:PROPERTIES:
+
+:END:
+
+#+filetags: :minutes:
+#+title: Meeting notes 6th Nov
+
+t-slot extrusions (mersey metal) 20x20

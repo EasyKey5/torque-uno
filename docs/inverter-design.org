@@ -1,0 +1,284 @@
+#+TITLE: Discrete inverter --- first draft design
+#+STARTUP: showall
+
+# Draft for WP2, written with Claude on 2026-11-06. This is a working design
+# note, not report prose (AI Tier 2: reword anything you reuse). Values come
+# from the datasheets listed under Sources, or from calculations shown here.
+# Nothing has been simulated, prototyped or ordered. Stock figures were read
+# from the Mouser UK, RS and Farnell websites on 2026-11-06: check them again
+# before filling in the order form.
+
+* What it has to do
+| Input              | Value                                                                                      | Source                   |
+|--------------------+--------------------------------------------------------------------------------------------+--------------------------|
+| Motor              | Faulhaber 2232S012BX4: 3.5 Ω and 115 µH phase-to-phase, 17 mN·m/A, 562 rpm/V, 2 pole pairs | Faulhaber datasheet      |
+| Working current    | 0.47 A at 8 mN·m; 1.0 A rated continuous                                                   | 8 / 17 mN·m/A; datasheet |
+| Worst-case current | 3.6 A if stalled at 12.6 V                                                                 | 12.6 V / 3.5 Ω           |
+| Supply             | 3S Li-ion, 9.0–12.6 V, fused ≤ 5 A                                                         | PWR-04, SFT-07           |
+| Top speed          | 3000 rpm design case; firmware cap below 7,000 rpm                                         | Decision 2026-11-06      |
+| Controller         | Pico 2 W does all control: PWM, current loop, FOC, speed                                   | Decision 2026-11-06      |
+| Protection         | Stop command, heartbeat timeout, current limit, regen clamp, reverse polarity              | SFT-01, 02, 08, 09       |
+| Telemetry          | Bus voltage and current                                                                    | ELE-05                   |
+
+* Block diagram
+#+begin_example
+ 3S pack ─ fuse ─ reverse-polarity FET ─┬─ TVS ─┬─ bulk C ─┬────────────────── VBUS (9–12.6 V)
+                                        │       │          │
+                                        │   5 V buck    GVDD (direct)
+                                        │       │          │
+                                  DC-link shunt │    ┌─────┴──────┐  GHx/GLx   ┌───────────┐   phase A ─[20 mΩ]─┐
+                                  + INA181 ─────┼──► │  DRV8300   ├──────────► │ 3 × dual  ├─  phase B ─[20 mΩ]─┼─ 2232 BX4
+                                  (bus I, trip) │    │ gate driver│            │ CSD88537ND│   phase C ─────────┘
+                                        │       │    └─────▲──────┘            └───────────┘        │        │
+                                        │       │          │ 6 inputs, gated                        │        │
+                          comparator ◄──┘       │   AND gates ◄── enable latch ◄── comparators ◄── INA240A1 × 2
+                          trip ──────────────────────────────────────────────►            │
+                                                │                                          ▼
+                                 Pico 2 W ◄─────┴─ 5 V        PIO ◄── ADS8353 (2 ch simultaneous, 16-bit)
+                                   │  PWM slices 0–2 ──► AND gates ──► DRV8300
+                                   │  SPI0 ──► AS5047P encoder (magnet on rear shaft)
+                                   │  ADC: Vbus, bus current, motor temperature
+#+end_example
+
+* Power stage
+** Gate driver: TI DRV8300
+- *Variant:* DRV8300DRGER (VQFN-24, 4 × 4 mm). It has bootstrap diodes, a MODE pin (left floating, the low-side input is non-inverted) and a DT pin for adjustable dead time. If you want to hand-solder, the DRV8300DPWR (TSSOP-20, non-inverted, fixed 200 ns dead time) does the same job.
+- *Inputs:* six independent inputs, INHx and INLx, so the Pico switches every transistor itself. Logic high is 2.0 V minimum, so 3.3 V GPIO is fine.
+- *Supply:* GVDD (5–20 V operating, 21.5 V absolute maximum) runs straight from the pack, so gates see 9–12.6 V.
+- *Shoot-through protection:* if both inputs of a phase are high, the driver turns both transistors off. It also adds about 200 ns of dead time (DT pin floating, typical 215 ns).
+- *Missing features:* no enable pin, no overcurrent protection and no thermal protection. This design adds those outside the chip (see Protection).
+
+** MOSFETs: 3 × TI CSD88537ND
+- *Part:* dual 60 V N-channel in SO-8, one package per half-bridge. TI aims it at half-bridges in low-current motor control.
+- *Key figures:* RDS(on) 12.5 mΩ typical and 15 mΩ max at VGS = 10 V (19 mΩ max at 6 V); Qg 14 nC typical, 18 nC max.
+- *Losses at 1 A:* about 20 mW conduction per transistor (allowing for heating) plus about 10 mW switching per leg at 40 kHz. No heatsink is needed.
+- *Voltage margin:* 60 V is far above the 12.6 V bus.
+
+** Bootstrap, GVDD and gate resistors
+Following DRV8300 datasheet section 9.2.2:
+#+begin_example
+Q_total  = Qg + I_LBS / f_pwm = 18 nC + 220 µA / 40 kHz = 23.5 nC
+C_BST,min = Q_total / 1 V droop = 23.5 nF   -> use 100 nF, 25 V, X7R, at BSTx–SHx
+C_GVDD  >= 10 × C_BST = 1 µF               -> use 1 µF + 100 nF at GVDD
+Allowed droop at 9 V = 9 – 0.85 (diode) – 4.5 (BST UVLO) = 3.65 V
+#+end_example
+- *Duty cycle limit:* the bootstrap only recharges while the low-side is on, so limit duty to ≤ 96% (≥ 1 µs low-side at 40 kHz). At 3000 rpm the motor needs at most about 7 V of the 9 V minimum, so this costs nothing.
+- *Gate resistors:* start with 10 Ω in series with each GHx and GLx, to slow the edges for EMI. Fit 0 Ω pads so they can be changed.
+
+** PWM from the Pico 2 W
+- *Hardware:* use the PWM slices, not PIO. Slices 0, 1 and 2 on GP0–GP5 (A = high side, B = low side), phase-correct mode, started together in lockstep.
+- *Frequency:* at 40 kHz, TOP = 1874 (1,875 counts of 6.67 ns). Use at least 40 kHz because of the motor's 115 µH: worst-case ripple is 0.68 A pk-pk at 40 kHz, against a 0.47 A working current.
+- *Complementary outputs:* set channel B inverted, with its compare value offset from channel A by the dead time. 15 counts gives 100 ns per edge; the DRV8300 adds its own about 200 ns on top and blocks shoot-through regardless.
+- *Sample trigger:* the PWM wrap (count back to 0, the centre of the high-side on-time) triggers the current samples.
+
+* Current sensing
+** Phase currents: 2 × INA240A1 with in-line shunts
+- *Topology:* in-line shunts in phases A and B, so current is valid at any point in the PWM cycle, not just while the low-side transistor is on. Phase C is calculated as −(Ia + Ib).
+- *Amplifier:* INA240A1, gain 20 V/V. Common-mode range −4 to 80 V, built-in PWM rejection, input offset 25 µV max, gain error ±0.2% max, 400 kHz bandwidth, settling 9.6 µs to 0.5%.
+- *Supply and bias:* run it from 5 V. Tie REF1 to the 2.5 V reference and REF2 to ground, so zero current sits at 1.25 V, mid-range for the ADC. The INA240 can swing from 10 mV to VS − 0.2 V.
+- *Shunt:* 20 mΩ, 1%, 2512 (1 W) with Kelvin connections.
+
+| Shunt | Full scale | Signal at 0.47 A | Loss at 1 A | Loss at 3.6 A stall |
+|-------+------------+------------------+-------------+---------------------|
+| 15 mΩ | ±4.0 A     | 141 mV           | 15 mW       | 0.19 W              |
+| 20 mΩ | ±3.0 A     | 188 mV           | 20 mW       | 0.26 W              |
+| 25 mΩ | ±2.4 A     | 235 mV           | 25 mW       | 0.32 W              |
+
+With 20 mΩ:
+- *Resolution:* one ADS8353 step is 0.095 mA.
+- *Offset:* the INA240 offset is at most 1.25 mA. Compare this with the DRV8316C's ±50 mA, which is the main reason to go discrete.
+
+** ADC: TI ADS8353 (not the ADS8354)
+The ADS8354 needs fully-differential inputs with a fixed ±0.1 V common-mode window. A single-ended INA240 output would break that window, so use its sibling, the ADS8353, which accepts single-ended inputs.
+- *What it does:* samples both channels at the same instant, 16-bit, up to 600 ksps.
+- *Input range:* use single-ended mode, 0 to VREF (2.5 V) with AINM tied to ground. The pseudo-differential mode would need a buffered 1.25 V on AINM, and the shared reference below makes it unnecessary.
+- *Supplies:* AVDD 4.5–5.5 V from the filtered 5VA rail, DVDD 3.3 V, so its logic matches the Pico directly.
+- *Reference:* the REF5025 below drives both REFIO pins, with the ADS8353's internal reference turned off (CFR.B6 = 0). The INA240 bias is exactly half of the same reference, so zero current always reads as mid-scale (code 32768), whatever the reference drifts to.
+- *Interface:* 32-clock, dual-SDO mode needs a clock period of at least 50 ns (≤ 20 MHz); conversion takes at most 730 ns. At 18.75 MHz (150 MHz / 8) from PIO, a frame takes 1.7 µs of the 25 µs PWM period.
+- *Timing:* PWM wrap → DMA or IRQ → PIO pulses CS → reads both SDO lines into the FIFO → DMA → FOC loop on core 1.
+- *Input filter:* the INA240 can drive at most 1 nF directly, so put a small series resistor (about 50 Ω) before each ADC input capacitor.
+
+** Reference: TI REF5025
+- *Part:* REF5025AIDGKT (VSSOP-8, standard grade: 0.1% initial accuracy, 8 ppm/°C maximum drift, ±10 mA output). The REF5025AID (SOIC-8) is the same chip if that is easier to buy.
+- *Supply:* from 5VA (input range 2.7–18 V), with a 1 µF bypass capacitor.
+- *Loads:* both ADS8353 REFIO pins (300 µA average each), both INA240 REF1 pins, and the trip threshold dividers (125 µA). That is under 1 mA in total.
+- *No buffer needed:* the INA240 datasheet (Figures 8-5 and 8-7) shows a REF5025 driving the REF pins directly, and says the pins are designed for a low-impedance reference.
+- *Capacitors:* 10 µF X7R at each REFIO pin (ADS8353 datasheet) and 1 µF at the REF5025 output. The total of 21 µF is inside the 1–50 µF the REF50 datasheet allows for this grade. If reference noise shows up, add about 1 Ω in series with the output capacitors, as the REF50 datasheet suggests.
+- *Other pins:* 1 µF from TRIM/NR (pin 5) to ground. Leave DNC (pins 1 and 8) and TEMP (pin 3) unconnected.
+- *Routing:* run separate traces from the REF5025 output to REFIO_A, REFIO_B, the INA240 REF1 pins and the threshold dividers, so the INA240 and divider currents don't flow in the ADC's reference trace.
+
+** Bus current and voltage (ELE-05) with the hardware trip
+- *Bus current:* a low-side DC-link shunt (20 mΩ) with an INA181A1IDBVR (20 V/V, common-mode −0.2 to 26 V, offset ±150 µV maximum at 0 V common mode, gain error ±1% maximum, 350 kHz).
+- *Supply:* 3.3 V with REF to ground, so its output can never exceed the Pico's ADC range. That gives 0.4 V/A, 8.2 A full scale, 2.0 mA per ADC count, and an offset of at most 7.5 mA.
+- *Limitation:* it reads motoring current only. Braking current flowing back to the pack reads as zero, so watch the bus voltage during braking.
+- *Outputs:* through 10 kΩ and 100 nF (160 Hz) to GP28 for average bus current, and directly to the DC-link comparator for the trip. That trip catches shoot-through or an overcurrent on any phase, including phase C.
+- *Bus voltage:* a 40 kΩ / 10 kΩ divider on GP26 (12.6 V reads as 2.52 V).
+- *Motor temperature:* an NTC thermistor on the motor case to GP27, for THM-01.
+
+* Protection
+| Hazard                       | Measure                                                                                                                                                                                                                 | Requirement |
+|------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------|
+| Overcurrent or shoot-through | Five comparators (TLV1704 and TLV1701) on both INA240s and the DC-link amplifier trip at 2.5 A. They clear a latch that disables the AND gates on all six driver inputs. Only the Pico can re-arm it. See Trip circuit. | SFT-08      |
+| Firmware current limit       | Phase current from the ADS8353, limited to about 1.5 A (motor rated 1.0 A)                                                                                                                                              | SFT-08      |
+| Stop command, heartbeat loss | Pico drives the same enable line low. A hardware watchdog timer could also drop it.                                                                                                                                     | SFT-01, 02  |
+| Regenerative overvoltage     | TVS clamp across the bus, e.g. SMBJ13A (13 V standoff), kept below GVDD's 21.5 V absolute maximum. Firmware also stops braking above about 13.5 V.                                                                      | SFT-09      |
+| Reverse polarity             | P-channel FET or ideal-diode controller in the battery lead                                                                                                                                                             | SFT-09      |
+| Pack short                   | Fuse at pack terminals (≤ 5 A) plus input fuse on the board                                                                                                                                                             | SFT-07, 09  |
+| Gate supply undervoltage     | Built into the DRV8300 (GVDD and bootstrap undervoltage lockout)                                                                                                                                                        | -           |
+
+** Trip circuit
+- *Comparators:* a TLV1704 (quad) covers the two INA240 windows, and a TLV1701 (single) covers the DC link. They run from 5 V, and their inputs are rail-to-rail, so the INA240's 0–5 V output can't overdrive them. Typical delay is 460 ns (output falling, 100 mV overdrive).
+- *Outputs:* all five are open-collector, wired together with one 10 kΩ pull-up to 3.3 V. This line, FAULT_N, goes low when any channel trips.
+- *Thresholds:* all come from the REF5025, so they track the current-sense bias.
+
+| Signal               | Threshold | Divider from 2.5 V                 | Trips at |
+|----------------------+-----------+------------------------------------+----------|
+| INA240 A and B upper | 2.2515 V  | 10.0 kΩ / 80.6 kΩ / 10.0 kΩ string | +2.50 A  |
+| INA240 A and B lower | 0.2485 V  | Same string                        | −2.50 A  |
+| DC link (INA181)     | 1.000 V   | 15.0 kΩ / 10.0 kΩ                  | 2.50 A   |
+
+- *Comparator wiring:*
+  - Upper and DC-link channels: signal to IN−, threshold to IN+. The output goes low when the signal rises above the threshold.
+  - Lower channels: signal to IN+, threshold to IN−. The output goes low when the signal falls below it.
+- *Latch (SN74LVC1G74):*
+  - FAULT_N goes to CLR, which forces Q low while any trip is active.
+  - PRE and D are tied to 3.3 V.
+  - GP8 (FAULT_CLR) drives CLK. A rising edge re-arms the latch (Q high), but only once the fault has gone.
+  - Q also goes to GP7, so the Pico can see a trip.
+- *Gating:* one AND gate combines Q with GP6 (DRIVE_EN) to make ENABLE. Six more AND ENABLE with each PWM line. Two SN74LVC08A give eight gates, one spare.
+- *Reset state:* Q is undefined at power-up, so DRIVE_EN must hold everything off. Give GP6 an external 4.7 kΩ pull-down, and don't rely on the RP2350's internal one: erratum E9 can stop the internal pull-down working. The RP2350 datasheet's workaround is an external pull-down of 8.2 kΩ or less.
+- *Response time:* about 0.5 µs in the comparator, a few ns in the logic and up to 180 ns in the DRV8300. That is under 1 µs from threshold to gates off.
+- *Slow edges:* the comparator output edges are slow (240 ns fall), but they only drive the flip-flop's asynchronous clear. Repeated clears during an edge do no harm.
+- *Start-up sequence:* firmware pulses FAULT_CLR, checks GP7 is high, then sets DRIVE_EN.
+
+** Regen check
+- Passive regen can't pump the bus. At 3000 rpm the back-EMF is 5.3 V, below the 9 V minimum, and it only reaches the bus voltage at about 7,000 rpm. Keep the firmware speed cap below that.
+- The only regen route is active braking. If all 1.18 J came back into 220 µF with the battery disconnected, the bus would reach about 104 V. So the TVS and the firmware braking limit are both needed, even though the disconnect also cuts the Pico's power.
+
+* Power rails
+| Rail      | Source                                      | Loads                                                         |
+|-----------+---------------------------------------------+---------------------------------------------------------------|
+| VBUS      | Pack, through fuse and reverse-polarity FET | MOSFETs, DRV8300 GVDD, LMR51420 input                         |
+| 5 V       | LMR51420 buck from VBUS                     | Pico 2 W VSYS (through a Schottky diode), TLV1704 and TLV1701 |
+| 5VA       | 5 V through a ferrite bead and 10 µF        | INA240 × 2, ADS8353 AVDD, REF5025                             |
+| 3.3 V     | Pico 2 W 3V3 output                         | ADS8353 DVDD, INA181, AS5047P, logic, pull-ups, gyro          |
+| 2.5 V ref | REF5025 from 5VA                            | ADS8353 REFIO, INA240 REF1, trip thresholds                   |
+
+** 5 V buck: TI LMR51420
+- *Part:* LMR51420XDDCR: 4.5–36 V input, 2 A, 500 kHz, light-load PFM mode (40 µA quiescent), SOT-23-6. The 36 V rating leaves margin over the SMBJ13A's 21.5 V worst-case clamp.
+- *Values (datasheet Table 9-1, 5 V at 500 kHz):*
+  - L = 10 µH, shielded, ≥ 1.5 A saturation.
+  - COUT = 2 × 22 µF, 16 V, X7R.
+  - RFBT = 100 kΩ, RFBB = 13.7 kΩ. With VFB = 0.6 V (0.591–0.609 V) this gives 4.98 V.
+  - CIN = 10 µF, 25 V, X7R, plus 100 nF at VIN.
+- *Same-footprint alternatives:*
+  - LMR51420YDDCR: 1.1 MHz, better stocked. Use 4.7 µH and 2 × 10 µF with the same divider.
+  - TPS54202DDCR: pin-compatible, but 28 V maximum and on order only.
+- *PFM:* it keeps light-load losses down (PWR-01). If its bursts show up in the current readings, the FPWM version (LMR51420XFDDCR) runs at a fixed 500 kHz.
+- *Load:* about 0.33 A peak, mostly the Pico 2 W's wireless chip (an estimate, not measured). That is well inside 2 A.
+- *Pico supply:* feed VSYS through a Schottky diode, so the board and USB can both be connected. This is the Pico 2 W datasheet's advice for a second power source. VSYS then sits at about 4.7 V.
+- *AS5047P:* run it at 3.3 V (VDD and VDD3V3 tied together) so its SPI levels match the Pico.
+
+** Bulk capacitance
+- 100–220 µF, 25 V aluminium polymer on the bus.
+- 10 µF, 25 V X7R plus 100 nF beside each half-bridge.
+- The Faulhaber's low inductance means high ripple current, so keep the loop from capacitor to MOSFETs to shunt short.
+
+* Pico 2 W pin map (draft)
+| GPIO    | Function                                       | Notes                                                |
+|---------+------------------------------------------------+------------------------------------------------------|
+| GP0/1   | PWM slice 0 A/B: INHA/INLA                     | Through the AND gates                                |
+| GP2/3   | PWM slice 1 A/B: INHB/INLB                     |                                                      |
+| GP4/5   | PWM slice 2 A/B: INHC/INLC                     |                                                      |
+| GP6     | DRIVE_EN to the AND gates                      | External 4.7 kΩ pull-down; low = all transistors off |
+| GP7     | FAULT: latch Q                                 | Low = tripped                                        |
+| GP8     | FAULT_CLR: latch CLK                           | Rising edge re-arms the latch                        |
+| GP10–14 | ADS8353 CS, SCLK, SDO_A, SDO_B, SDI            | PIO state machine                                    |
+| GP16–19 | SPI0: AS5047P encoder (and gyro on its own CS) | Hardware SPI                                         |
+| GP20/21 | I2C0                                           | Spare, e.g. a battery monitor                        |
+| GP26    | ADC0: bus voltage                              |                                                      |
+| GP27    | ADC1: motor NTC                                | THM-01                                               |
+| GP28    | ADC2: bus current (INA181)                     | ELE-05                                               |
+| GP22    | Spare / arm LED                                |                                                      |
+
+GP23–25 and GP29 belong to the Pico 2 W's wireless chip.
+
+* Encoder
+- *Sensor:* AS5047P (14-bit SPI, also ABI output) on a small board facing a diametric magnet on the motor's rear shaft.
+- *Mounting:* the standard 2232S012BX4 has a second shaft end. Don't order option Y158, which removes it.
+- *To decide:* the rear shaft diameter and the magnet mounting, from the Faulhaber drawing.
+
+* Parts list
+Stock was read from the distributor websites on 2026-11-06. Prices are for one unit, ex VAT.
+
+| Ref    | Part                                           | Qty | Function                        | Where to buy, stock                                                 | Unit price |
+|--------+------------------------------------------------+-----+---------------------------------+---------------------------------------------------------------------+------------|
+| U1     | TI DRV8300DRGER                                | 1   | Three-phase gate driver         | Mouser 595-DRV8300DRGER: 21,325                                     | £0.62      |
+| Q1–Q3  | TI CSD88537ND                                  | 3   | Dual N MOSFET half-bridges      | Mouser: 15,580. Farnell 3009688 listed, stock not shown             | £2.37      |
+| U2, U3 | TI INA240A1PWR                                 | 2   | Phase current amplifiers        | RS 226-4772, pack of 5: in stock. Mouser: on order only             | £2.85      |
+| U4     | TI ADS8353IPWR                                 | 1   | Two-channel simultaneous ADC    | Mouser: 362                                                         | £18.70     |
+| U5     | TI INA181A1IDBVR                               | 1   | DC-link current amplifier       | Mouser: 94 (INA181A1IDBVT: 255)                                     | £0.45      |
+| U6     | TI TLV1704AIPWR                                | 1   | Quad comparator, INA240 windows | Mouser: 8,403                                                       | £2.65      |
+| U7     | TI TLV1701AIDBVR                               | 1   | Comparator, DC link             | Mouser: 6,126                                                       | £0.99      |
+| U8, U9 | TI SN74LVC08APW                                | 2   | AND gating                      | Mouser: 6,736 (APWR reel: on order only)                            | £0.83      |
+| U10    | TI SN74LVC1G74DCUT                             | 1   | Trip latch                      | Mouser: 5,967 (DCUR reel: on order only)                            | £0.88      |
+| U11    | TI REF5025AIDGKT                               | 1   | 2.5 V reference                 | RS 825-3338, pack of 2: in stock. Mouser REF5025AID (SOIC-8): 2,406 | £3.65      |
+| U12    | TI LMR51420XDDCR                               | 1   | 5 V buck                        | Mouser: 185 (LMR51420YDDCR: 11,903)                                 | £1.07      |
+| U13    | AS5047P-ATSM (now sold under Infineon)         | 1   | Rotor angle                     | Mouser AS5047P-ATSM-TSSOP14: 11,165                                 | £6.20      |
+| R1–R3  | Vishay WSL2512R0200FEA, 20 mΩ 1% 1 W           | 3   | Phase A, phase B, DC link       | Mouser: 19,307                                                      | £1.39      |
+| D1     | Bourns SMBJ13A                                 | 1   | Bus clamp                       | Mouser: 8,600                                                       | £0.46      |
+| L1     | 10 µH shielded, ≥ 1.5 A saturation             | 1   | Buck inductor                   | Generic                                                             | -          |
+| D2     | Schottky, ≥ 1 A, ≥ 20 V                        | 1   | 5 V to Pico VSYS                | Generic                                                             | -          |
+| FB1    | Ferrite bead                                   | 1   | 5VA filter                      | Generic                                                             | -          |
+| C      | 100 nF BST × 3, 1 µF GVDD, bulk and decoupling | -   | -                               | Generic, 25 V or more                                               | -          |
+| -      | Diametric magnet                               | 1   | For the encoder                 | Depends on the rear shaft                                           | -          |
+| -      | Reverse-polarity P-channel MOSFET              | 1   | SFT-09                          | To choose                                                           | -          |
+| -      | Raspberry Pi Pico 2 W                          | 1   | Controller                      | Not checked. Check the chip revision (A4 fixes erratum E9)          | -          |
+
+- *Cost:* about £54 ex VAT for one board's priced parts above, before passives, the Pico and the PCB. RS minimum packs add a little: 5 × INA240A1PWR for £14.27, 2 × REF5025AIDGKT for £7.30. The ADS8353 is over a third of that, so buy a spare before the 362 run out.
+- *Farnell (preferred):* doesn't list the DRV8300, ADS8353, INA240A1 or LMR51420. It no longer stocks the TLV1704, and its REF5025AIDGKT page says no longer manufactured. It does stock the INA181A2IDBVT (143). That is the 50 V/V version: it would work with the trip threshold at the 2.5 V reference itself, but it is slower (210 kHz).
+- *RS (preferred):* has the INA240A1PWR and REF5025AIDGKT. It doesn't list the DRV8300, CSD88537ND, ADS8353, TLV1704, INA181A1 or LMR51420.
+- *Mouser UK:* has everything else in stock.
+- *Not checked at RS or Farnell:* the logic chips, shunts and TVS. These are common parts, so they may be there too.
+- *Suggested split:* RS for the INA240s and the REF5025, and Mouser for the rest. Mouser isn't a preferred supplier, so the order form needs its full address, and the technicians must agree. Every part above is in stock rather than on back order, but recheck before ordering.
+
+* Layout notes for a 2-layer board
+- Put the power stage along one edge with a solid ground plane underneath. Keep each bootstrap capacitor right at its BSTx and SHx pins.
+- Route shunt sense lines as Kelvin pairs straight to the INA240 inputs, away from the switching nodes.
+- Join analogue ground (ADS8353, INA240, reference) to power ground at one point near the DC-link shunt.
+- Keep the gate loops short: driver output, gate resistor, MOSFET, return to SHx or ground.
+- Reference designs worth copying for layout: SimpleFOC Drive, TI TIDA-010023 (low-side sensing) and DRV8300DRGE-EVM.
+
+* Bring-up order
+1. Power rails only, motor disconnected, bench supply limited to 0.3 A.
+2. Gate signals with the bus at 5 V: check dead time and that the enable gating works with a scope.
+3. Trip test: inject a voltage at a comparator and check that all six gates turn off.
+4. Motor in open-loop voltage mode at low voltage. Then calibrate current-sense offset and gain against a bench meter.
+5. Closed-loop FOC with the encoder, then the current loop, then the speed loop, then the wheel. Keep the wheel enclosed (SFT-05).
+
+* Open items
+- *Supplier:* most ICs come only from Mouser UK. Ask the technicians whether they will order from Mouser before laying out the board.
+- *Parts still to choose:* the reverse-polarity P-channel MOSFET (VGS rating ≥ 20 V, or a gate zener, because the bus can reach 21.5 V) and the magnet.
+- *Encoder mounting:* rear shaft diameter and magnet mount.
+- *Pico 2 W:* confirm stock and the RP2350 revision of the boards you buy.
+- *Board space:* check the power stage, sensing and Pico fit on the 100 × 100 mm board alongside the gyro and battery parts (ELE-03 all-in-one).
+- *Document updates:* the risk assessment (1.18 J at 3000 rpm), SFT-04 and ELE-01 still need updating.
+
+* Sources
+- TI DRV8300 datasheet (SLVSFG5D): https://www.ti.com/lit/gpn/drv8300
+- TI CSD88537ND: https://www.ti.com/product/CSD88537ND
+- TI INA240 datasheet: https://www.ti.com/lit/gpn/ina240
+- TI ADS8353 datasheet (SBAS584B): https://www.ti.com/lit/gpn/ads8353
+- TI ADS8354 datasheet (SBAS556B), for the common-mode limit: https://www.ti.com/lit/gpn/ads8354
+- TI REF50 datasheet (SBOS410O): https://www.ti.com/lit/gpn/REF50
+- TI LMR51420 datasheet (SLUSEF6C): https://www.ti.com/lit/ds/symlink/lmr51420.pdf
+- TI TLV170x datasheet (SBOS589D): https://www.ti.com/lit/ds/symlink/tlv1704.pdf
+- TI INA181 datasheet: https://www.ti.com/lit/ds/symlink/ina181.pdf
+- TI SN74LVC1G74 datasheet: https://www.ti.com/lit/ds/symlink/sn74lvc1g74.pdf
+- RP2350 datasheet, erratum RP2350-E9 (external pull-down of 8.2 kΩ or less): https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf
+- Stock pages (2026-11-06): Mouser UK search https://www.mouser.co.uk/c/?q= followed by the part number; RS search https://uk.rs-online.com/web/c/?searchTerm= followed by the part number (RS 226-4772 and 825-3338); Farnell search https://uk.farnell.com/search?st= followed by the part number
+- TI E2E, INA240 vs INA181: https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/632997/ina240-dc-motor-current-sensing-to-check-if-the-motor-is-stuck-using-either-ina240-or-ina181
+- Faulhaber 2232 BX4 datasheet: https://www.faulhaber.com/fileadmin/Import/Media/EN_2232_BX4_DFF.pdf
+- Pico 2 W datasheet: https://datasheets.raspberrypi.com/picow/pico-2-w-datasheet.pdf
+- Farnell CSD88537ND: https://uk.farnell.com/texas-instruments/csd88537nd/mosfet-dual-n-channel-60v-15a/dp/3009688
+- Calculation scripts: the numbers here came from scratch scripts and can be regenerated on request.
