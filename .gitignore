@@ -10,3 +10,6 @@ slprj/
 # Emacs
 *~
 .auctex-auto/
+
+# Raw simulation runs (large; regenerate with the scripts; CSV/PNG summaries are tracked)
+MATLAB/*/results/*.mat

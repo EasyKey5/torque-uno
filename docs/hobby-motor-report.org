@@ -1,0 +1,155 @@
+#+TITLE: Hobby motor options --- research report
+#+STARTUP: showall
+
+# Working report drafted with Claude on 2026-11-06 (AI Tier 2: reword
+# anything reused in an assessed report). Method: a multi-agent web search
+# found the candidates, but most of its fact-checking and its write-up step
+# were cut off by a usage limit. The specs, prices and stock below were then
+# checked directly on the retailer and manufacturer pages on 2026-11-06,
+# except where marked. Voltages are hand calculations with
+# V = n/Kv + (8 mN·m / Kt) × R, Kt = 9549/Kv; nothing has been measured.
+
+* Summary
+Torque isn't the hard part: every motor here makes 8 mN·m easily. What limits hobby motors is speed per volt and winding resistance.
+- *Gimbal motors:* high resistance (5–9 Ω), so they can't draw dangerous currents and drop straight into the inverter as designed. But their low Kv tops them out at about 1,300–1,800 rpm from an empty 9 V pack.
+- *Drone and plane motors:* pass every speed case with volts to spare, but their 0.1–0.2 Ω windings would stall at 50–90 A. They need changes to the inverter.
+
+| Top speed | Best hobby motor                                   | Price, where (stock 2026-11-06)         | Inverter      | Verdict                                                    |
+|-----------+----------------------------------------------------+-----------------------------------------+---------------+------------------------------------------------------------|
+| 600 rpm   | iFlight iPower GM2804 with AS5048A encoder         | £33.00, iFlight EU (Austria), 150       | Unchanged     | Safest and simplest; SPI encoder built in                  |
+| 1500 rpm  | DFRobot FIT1034 (2804, 220 Kv) with AS5600 encoder | €24.90, Grobotronics (Greece), in stock | Unchanged     | *Best hobby option overall*, if 1500 rpm is allowed        |
+| 3000 rpm  | Dualsky ECO 2304C-V2 1850 Kv                       | €16.72, Hoelleinshop (Germany), 6       | Needs changes | Works, but you redesign the inverter and the encoder mount |
+| 6000 rpm  | Same drone motors                                  | as above                                | Needs changes | Passes easily; stored energy 2.37 J                        |
+
+*Recommendation:* if Kai agrees to 1500 rpm, the DFRobot FIT1034 is the strongest low-cost choice.
+- It costs about €25 against £213 for the Faulhaber.
+- It needs no inverter changes: its 5.1 Ω winding limits stall current to 2.5 A at 12.6 V, right at the hardware trip.
+- Its encoder is built in.
+- It needs only 0.17 W of winding heat at 8 mN·m, less than the Faulhaber (0.78 W).
+- Stored energy is 0.59 J, half the 3000 rpm figure, which makes the risk assessment easier.
+- The cost is a heavier wheel: 68 g aluminium or 107 g brass.
+
+If 3000 rpm must stay, the hobby route is a small drone motor plus the inverter changes below. Otherwise stay with the Faulhaber or the maxon 351006.
+
+* Speed cases
+Momentum stays at 7.54 mN·m·s. The 1500 rpm case is new.
+
+| Top speed | Wheel J (kg·m²) | Stored energy | Example wheels                                           | Kv needed (8 V usable) | Max line R at Kv 220 / 900 / 1500 |
+|-----------+-----------------+---------------+----------------------------------------------------------+------------------------+-----------------------------------|
+| 600 rpm   | 1.2e-4          | 0.24 J        | Brass Ø75 × 4.5 mm, 171 g; aluminium Ø90 × 6.9 mm, 119 g | ≥ 75 rpm/V             | 34 / 11 / 6.8 Ω                   |
+| 1500 rpm  | 4.8e-5          | 0.59 J        | Brass Ø60 × 4.4 mm, 107 g; aluminium Ø75 × 5.7 mm, 68 g  | ≥ 188 rpm/V            | 11.8 / 9.7 / 6.4 Ω                |
+| 3000 rpm  | 2.4e-5          | 1.18 J        | Brass Ø50 × 4.6 mm, 77 g; aluminium Ø75 × 2.9 mm, 34 g   | ≥ 375 rpm/V            | fails / 7.5 / 5.6 Ω               |
+| 6000 rpm  | 1.2e-5          | 2.37 J        | Brass Ø40 × 5.6 mm, 60 g; aluminium Ø60 × 3.5 mm, 27 g   | ≥ 750 rpm/V            | fails / 3.1 / 4.0 Ω               |
+
+* Candidates
+R is line-to-line unless noted. Voltages are what the motor needs for 8 mN·m at each top speed; it passes if that is ≤ 9 V.
+
+| Motor                               | Type        | Kv (rpm/V)                    | R (Ω)               | L        | Pole pairs | Mass  | Encoder           | Price, where                        | 600   | 1500     | 3000        | 6000        | I at 8 mN·m | Stall at 12.6 V |
+|-------------------------------------+-------------+-------------------------------+---------------------+----------+------------+-------+-------------------+-------------------------------------+-------+----------+-------------+-------------+-------------+-----------------|
+| iFlight iPower GM2804 + AS5048A     | Gimbal      | ~160–177 (from no-load speed) | 9 ±5%               | -        | 7 (12N14P) | 51 g  | AS5048A, built in | £33.00, iFlight EU, 150 in stock    | 4.8 V | 10.2 V ✗ | ✗           | ✗           | 0.14 A      | 1.4 A           |
+| DFRobot FIT1034 (2804)              | Gimbal      | 220                           | 5.1 (2.3 per phase) | 2.8 mH   | 7 (12N14P) | ~59 g | AS5600, built in  | €24.90, Grobotronics GR, in stock   | 3.7 V | 7.8 V    | 14.6 V ✗    | ✗           | 0.18 A      | 2.5 A           |
+| Dualsky ECO 2304C-V2 1850 Kv        | Drone/plane | 1850                          | 0.165               | -        | -          | 23 g  | None              | €16.72, Hoelleinshop DE, 6 in stock | 0.6 V | 1.1 V    | 1.9 V       | 3.5 V       | 1.55 A      | 76 A            |
+| Dualsky ECO 2304C-V2 1450 Kv        | Drone/plane | 1450                          | 0.230               | -        | -          | 23 g  | None              | €19.05, modelemax PL (unconfirmed)  | 0.7 V | 1.3 V    | 2.3 V       | 4.4 V       | 1.21 A      | 55 A            |
+| T-Motor MN2212 V2 920 Kv            | Drone       | 920                           | 0.142               | -        | -          | -     | None              | ~£45, Robotshop UK (restocking)     | 0.8 V | 1.7 V    | 3.4 V       | 6.6 V       | 0.77 A      | 89 A            |
+| PROPDRIVE v2 2836 1000 Kv           | Plane       | 1000                          | not published       | -        | -          | 81 g  | None              | £17.84, HobbyKing UK, 7 left        | ✓     | ✓        | ✓ (≥ 3.0 V) | ✓ (≥ 6.0 V) | 0.84 A      | unknown         |
+| /Baseline:/ Faulhaber 2232S012BX4   | Precision   | 562                           | 3.5                 | 0.115 mH | 2          | 65 g  | Add AS5047P       | £213.44, RS                         | 2.7 V | 4.3 V    | 7.0 V       | 12.3 V ✗    | 0.47 A      | 3.6 A           |
+| /Baseline:/ maxon EC 20 flat 351006 | Precision   | 1080                          | 3.54                | 0.424 mH | 4          | 22 g  | Add AS5047P       | £105.43, maxon UK                   | 3.8 V | 4.6 V    | 6.0 V       | 8.8 V       | 0.90 A      | 3.6 A           |
+
+Winding heat at 8 mN·m (I² × R): GM2804 0.18 W, FIT1034 0.17 W, Dualsky 1850 Kv 0.40 W, MN2212 0.08 W, Faulhaber 0.78 W, maxon 351006 2.9 W. Gimbal and drone motors are both more efficient than the precision motors at this tiny torque.
+
+** iFlight iPower GM2804 with AS5048A encoder (600 rpm)
+- *Specs (iFlight EU page):* Ø35 × 25 mm with encoder housing, 51 g, 12N14P, 8 mm hollow shaft (6.5 mm bore), 9 Ω ±5%, no-load 1,602–1,771 rpm at 10 V and 0.09 A, load torque 250–350 g·cm at 0.8 A. Kv isn't stated; the no-load speed gives about 160–177 rpm/V.
+- *Encoder:* iFlight's global shop lists "1 x AS5048A Encoder with aluminum case". The AS5048A is a 14-bit SPI sensor, which fits the inverter's SPI0 encoder port directly.
+- *Speed limit:* it holds 8 mN·m up to about 1,300 rpm from 9 V. 1500 rpm only works on a charged pack (10.2 V needed).
+- *Safety:* 9 Ω limits stall current to 1.4 A, under the 2.5 A trip.
+- *Not stated:* whether 9 Ω is per phase or line-to-line, and the inductance. Measure both.
+
+** DFRobot FIT1034 (1500 rpm; best hobby option)
+- *Specs (Grobotronics page):* Ø34.5 × 19.5 mm aluminium frame, 12N14P, 7 pole pairs, 220 Kv, 5.1 Ω winding / 2.3 Ω phase, 2.8 mH winding / 0.86 mH phase, 8 mm hollow shaft (5.4–6.5 mm bore), about 300 g·cm (0.03 N·m) rated torque, 2,600 rpm at 12 V. The earlier report called its resistance "unclear"; the retailer's page now gives both values, which agree with a 2.3 Ω per-phase reading.
+- *Encoder:* built-in 12-bit AS5600 with I²C (default), PWM or analogue output on a GH1.25 4-pin connector at 3.3 V.
+- *Encoder speed:* a Pico reaction-wheel build (MACE log) found AS5600 I²C speed limited the wheel: about 800 rpm at 100 kHz, clean above 1,000 rpm at 400 kHz. Run I²C at 400 kHz–1 MHz on I2C0 (GP20/21), or read its PWM output with PIO. Check this before relying on 1500 rpm.
+- *Ripple:* 2.8 mH gives about 0.03 A ripple at 40 kHz, so the inverter works unchanged, and 20 kHz would also be fine.
+- *Sourcing:* Grobotronics (Greece, EU) shows "In Stock, Ships in 24 Hours". The page prints the price as "€2490", most likely €24.90. No UK stockist found (The Pi Hut doesn't list it).
+- *Precedent:* the MACE reaction-wheel build used a 2804 220 Kv gimbal motor (2.3 Ω per phase) with an AS5600 and SimpleFOC.
+
+** Dualsky ECO 2304C-V2 (3000 or 6000 rpm, needs inverter changes)
+- *Specs (Dualsky spec sheet, via elefun.no):* three windings: 2300 Kv / 103 mΩ, 1850 Kv / 165 mΩ, 1450 Kv / 230 mΩ. Bursts of 10–15 A for 15 s. The sheet doesn't say whether Ri is per phase or line-to-line, and gives no inductance.
+- *Fit:* the 1450 and 1850 Kv windings pass every speed case with at least 4.5 V to spare. Current at 8 mN·m is 1.2–1.6 A, under the 2.5 A trip, but the trip has less headroom than with the gimbal motors.
+- *Stock:* 1850 Kv: Hoelleinshop (Germany) €16.72, 6 in stock. 1450 Kv: modelemax.pl (Poland) was listed at €19.05 in a search result, but the product page returned 404 on 2026-11-06.
+- *Encoder:* none. The shaft and bell rotate together, so put the magnet in the wheel hub facing an AS5047P.
+
+** HobbyKing UK
+- *What's there:* the UK warehouse search found no gimbal motors and few small multirotor motors. The closest is the PROPDRIVE v2 2836 1000 Kv (£17.84, UK warehouse, 7 left), but it weighs 81 g, is far more powerful than needed (rated 30 A), and has no published resistance.
+- *Verdict:* HobbyKing UK is a weak source for this project. iFlight's EU warehouse and EU model shops have the better small motors.
+
+** Others found but not recommended
+- *iFlight GM3506 with encoder:* a larger gimbal motor; one SimpleFOC user found its cogging noticeable at very slow speeds. Its EU store page didn't load on 2026-11-06.
+- *T-Motor MN2212 V2 920 Kv:* 142 mΩ (T-Motor store and Robotshop), well made, but about £45 and restocking at Robotshop UK (page blocked automated checks; price from a search result).
+
+* Inverter changes for drone motors
+Drone motors don't publish inductance; small ones are typically tens of µH. Worst-case ripple is V / (4 × L × f) at 12.6 V:
+
+| Line inductance | Ripple at 40 kHz | Ripple at 100 kHz | Current rise rate |
+|-----------------+------------------+-------------------+-------------------|
+| 20 µH           | 3.9 A pk-pk      | 1.6 A pk-pk       | 0.63 A/µs         |
+| 50 µH           | 1.6 A pk-pk      | 0.63 A pk-pk      | 0.25 A/µs         |
+| 100 µH          | 0.79 A pk-pk     | 0.32 A pk-pk      | 0.13 A/µs         |
+| 150 µH          | 0.53 A pk-pk     | 0.21 A pk-pk      | 0.08 A/µs         |
+
+With the motor alone, ripple at 40 kHz could exceed the 2.5 A trip on its own. The changes:
+- *Series inductors:* one per phase, about 100 µH, rated ≥ 3 A saturation. With 80–100 kHz PWM this brings ripple near 0.3 A, and slows current rise to about 0.1 A/µs, so the existing 1 µs trip still catches a stall long before the 50–90 A stall current builds up.
+- *PWM:* 100 kHz phase-correct on the RP2350 gives 750 counts, enough resolution. Run the FOC loop every second or third period. Switching losses triple but stay small at these currents.
+- *Trip:* keep it at 2.5 A with the inductors, or raise it towards 3 A for the 1850 Kv winding (1.55 A working).
+- *Dead time:* low-resistance motors are more sensitive to voltage errors, so add dead-time compensation in firmware.
+- *Fuse:* the ≤ 5 A pack fuse stays as the backstop.
+
+* How far to trust hobby specs
+- *Kv:* the SimpleFOC docs say manufacturer Kv is often wrong or missing, especially for gimbal motors. One drone motor (Racerstar BR2205 2600 Kv) measured 2,400 Kv, about 8% low.
+- *Resistance:* one cheap 2208 gimbal motor listed at 13.3 Ω measured 12.5–16.4 Ω. Listings often don't say whether R is per phase or line-to-line. One SimpleFOC thread found a GBM2804 "6.3 Ω" was per phase, so about 12.6 Ω line-to-line.
+- *Plan:* measure R, L and Kv on arrival (multimeter, LCR meter, or SimpleFOC's characterisation routines) before trusting the pass test.
+
+* Low-speed behaviour
+- A SimpleFOC contributor reports that once dead-time compensation is applied, cogging in gimbal motors matters much less for slow, smooth motion than usually assumed; the steppy feel is mostly dead time.
+- Gimbal motors were designed for slow, smooth camera motion, which suits a reaction wheel near zero speed better than a drone motor.
+
+* Ordering notes
+- *HobbyKing UK warehouse:* ships within the UK, so no import charges.
+- *iFlight EU (Austria), Grobotronics (Greece), Hoelleinshop (Germany):* EU shops. Since Brexit, expect import VAT and possibly a handling fee on delivery to the UK. Check how the technicians handle that before ordering.
+- None of these are preferred suppliers, so the order form needs each shop's full address. All listed items showed stock, not back order, on 2026-11-06; recheck before ordering.
+
+* Sources
+** Retailer and manufacturer pages (read 2026-11-06)
+- iFlight EU, iPower GM2804 with encoder: https://iflight-rc.eu/en-gb/products/ipower-gm2804-gimbal-motor-with-encoder
+- iFlight global shop, GM2804 with AS5048A encoder: https://shop.iflight.com/ipower-gm2804-gimbal-motor-with-as5048a-encoder-pro288
+- Grobotronics, DFRobot FIT1034: https://grobotronics.com/brushless-motor-3-phase-2804-12v-2600rpm-300gcm.html?sl=en
+- Hoelleinshop, Dualsky ECO 2304C-V2 1850 Kv: https://hoelleinshop.com/en/products/dualsky-eco-2304c-v2-1850kv-23g-51639
+- Dualsky ECO 2304C-V2 spec sheet (elefun.no copy): https://www.elefun.no/Uploads/Docs/36013_ECO%202304C-V2_SPEC.pdf
+- Dualsky ECO 2204C spec sheet (elefun.no copy): https://www.elefun.no/Uploads/Docs/34502_ECO2204C_SPEC.pdf
+- HobbyKing, PROPDRIVE v2 2836 1000 Kv: https://hobbyking.com/propdrive-v2-2836-1000kv-brushless-outrunner-motor.html
+- T-Motor, MN2212 V2: https://store.tmotor.com/goods-388-MN2212-V20.html
+- Robotshop UK, MN2212 V2 920 Kv (search result only): https://uk.robotshop.com/products/t-motor-navigator-mn2212-v2-920kv-brushless-motor
+- modelemax.pl, Dualsky 2304C-V2 1450 Kv (404 on 2026-11-06): https://modelemax.pl/en/dualsky-engines/28523-dualsky-motor-2304c-v2-1450kv
+
+** Technical background
+- SimpleFOC, measuring Kv: https://docs.simplefoc.com/kv_rating_measure
+- SimpleFOC, gimbal vs drone motors: https://docs.simplefoc.com/bldc_motors
+- SimpleFOC forum, best motor for a reaction wheel: https://community.simplefoc.com/t/best-motor-for-reaction-wheel-project/3109
+- SimpleFOC forum, high-resistance gimbal motors and dead time: https://community.simplefoc.com/t/experience-with-high-resistance-gimbal-motors-for-smooth-slow-closed-loop-motion/8306
+- SimpleFOC forum, measuring gimbal R, L and Kv: https://community.simplefoc.com/t/measuring-gimbal-resistance-inductance-and-kv-using-simplefoc/6842
+- SimpleFOC forum, low-resistance gimbal motors: https://community.simplefoc.com/t/using-a-low-resistance-gimbal-motor-with-the-simplefocshield/3228
+- MACE reaction-wheel log (Pico, 2804 gimbal, AS5600): https://zeulewan.github.io/geodude-control/electrical/geodude/mace-development-log/
+- MiniQuad Test Bench, Racerstar BR2205 Kv: https://www.miniquadtestbench.com/racerstar-br2205-2600kv.html
+- Novanta, low-inductance motors and PWM ripple: https://novanta.com/robotics-automation/technical-paper/achieving-optimal-motion-system-performance-with-low-inductance-motors/
+- TI TIDA-00916 drone ESC reference design (60 kHz PWM): https://www.ti.com/tool/TIDA-00916
+
+* Best value at 1500 rpm (research run, 2026-11-12)
+A second research run looked only at the 1500 rpm case. It found no motor that beats the DFRobot FIT1034.
+- *FIT1034:* passes at 7.8 V (8.7 V even if its 5.1 Ω were a per-phase figure). Grobotronics still showed it in stock on 2026-11-12.
+- *Rejected:*
+  - Mercury DM3505EC: 117 Kv, needs about 13.4 V.
+  - iFlight GM2804: about 168 Kv, needs about 10.2 V; RobotShop UK has it on back order.
+  - GM4108-class motors (used in the SimpleFOC pendulum): about 90 Kv, and only sold on eBay.
+  - DFRobot FIT1035: Digi-Key EU out of stock until about December.
+- *Possible rival, not available:* a GBM2804R with AS5048A (about 215–237 Kv, 5.57 Ω) was reported but could not be confirmed, and iFlight EU only lists the GBM2804H-100T (fails).
+- *Encoder:* the FIT1034's AS5600 has I²C, PWM and analogue outputs but no SPI. Whether I²C limits it below 1500 rpm on the Pico is unconfirmed (the supporting claim was refuted), so test it early. The fallback is its PWM output read by PIO, or an added SPI sensor.
+- *Modulation:* sine PWM gives only about 0.87 × 9 V ≈ 7.8 V between lines, right at the FIT1034's 7.8 V need. Use space-vector PWM (about 9 V) in the FOC firmware.

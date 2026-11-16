@@ -122,7 +122,7 @@ Examples of motors these checks catch:
 - *Very high Kt:* lower current is good for losses but makes it harder to measure. The DRV8316C has up to ±50 mA of offset before calibration, against 0.09 A at 8 mN·m on the FIT1035.
 
 * Putting motor data into the Simulink model
-Variables are in the model workspace of =MATLAB/my_bldc_controller.slx=. Conversions assume a star-equivalent model.
+Variables are in the model workspace of =MATLAB/05-voltage-control/my_bldc_controller.slx=. Conversions assume a star-equivalent model.
 
 | Datasheet value  | Model variable | Conversion            | Note                                                        |
 |------------------+----------------+-----------------------+-------------------------------------------------------------|
